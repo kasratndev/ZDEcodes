@@ -1257,7 +1257,7 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(PRESET.sky);scene
 const camera=new THREE.PerspectiveCamera(60,1,.1,1000);camera.position.set(7,6,10);camera.lookAt(0,1,0);
 const renderer=new THREE.WebGLRenderer({antialias:QUALITY!=='performance',powerPreference:'high-performance'});
 const QUALITY_PRESETS={
- performance:{pixel:1,shadows:false,shadowSize:512,exposure:1.05},
+ performance:{pixel:.78,shadows:false,shadowSize:512,exposure:1.05},
  high:{pixel:1.5,shadows:true,shadowSize:2048,exposure:1.12},
  ultra:{pixel:2,shadows:true,shadowSize:4096,exposure:1.16}
 };
@@ -1267,7 +1267,7 @@ renderer.shadowMap.enabled=QUALITY_CONFIG.shadows;renderer.shadowMap.type=THREE.
 const hemi=new THREE.HemisphereLight(0xddeaff,0x3d4851,PRESET.hemi);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,PRESET.sun);sun.position.set(9,15,7);sun.castShadow=true;sun.castShadow=QUALITY_CONFIG.shadows;sun.shadow.mapSize.set(QUALITY_CONFIG.shadowSize,QUALITY_CONFIG.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:PRESET.ground,roughness:.96}));floor.rotation.x=-Math.PI/2;floor.position.y=-.035;floor.receiveShadow=true;scene.add(floor);
-const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);let player=null,score=0,last=0,ready=false,cameraFollow=null;
+const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);groundRaycaster.firstHitOnly=true;const runtimePhysicsMeshCache=new WeakMap();let player=null,score=0,last=0,ready=false,cameraFollow=null,adaptivePixelRatio=QUALITY_CONFIG.pixel,perfLast=performance.now(),perfFrames=0;
 const keyMap={KeyW:'w',ArrowUp:'w',KeyS:'s',ArrowDown:'s',KeyA:'a',ArrowLeft:'a',KeyD:'d',ArrowRight:'d',Space:'jump',KeyE:'interact',w:'w',s:'s',a:'a',d:'d',W:'w',S:'s',A:'a',D:'d',' ':'jump',e:'interact',E:'interact'};
 function has(o,type){return !!o.behaviors?.some(b=>b.type===type&&b.enabled!==false)}
 function mat(color,roughness=.72,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
@@ -1315,11 +1315,12 @@ async function loadObject(v){
   let bounds=new THREE.Box3().setFromObject(imported),size=bounds.getSize(new THREE.Vector3()),h=size.y||Math.max(size.x,size.z)||1;
   imported.scale.multiplyScalar((def.targetHeight||1.8)/h);imported.updateMatrixWorld(true);bounds=new THREE.Box3().setFromObject(imported);
   const center=bounds.getCenter(new THREE.Vector3());imported.position.x-=center.x;imported.position.y-=bounds.min.y;imported.position.z-=center.z;imported.updateMatrixWorld(true);
+   await bvhReady;optimizeStaticGeometry(imported);
   node=new THREE.Group();node.add(imported);node.updateMatrixWorld(true);
   if(def.category==='interior')interiorData=extractInteriorGeometry(imported,new THREE.Box3().setFromObject(imported));
   mixer=gltf.animations?.length?new THREE.AnimationMixer(imported):null;clips=gltf.animations||[];
  }else node=makePrimitive(v.kind);
- node.visible=v.visible!==false;node.position.set(v.x||0,v.y||0,v.z||0);if(v.scaleXYZ)node.scale.set(v.scaleXYZ.x??1,v.scaleXYZ.y??1,v.scaleXYZ.z??1);else node.scale.setScalar(v.scale||1);if(v.rotation)node.rotation.set(v.rotation.x||0,v.rotation.y||0,v.rotation.z||0);node.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}if(m.isDirectionalLight&&m.userData.zdeADLLight){m.intensity=v.adlIntensity??2.6;m.castShadow=QUALITY_CONFIG.shadows}});scene.add(node);
+ node.visible=v.visible!==false;node.position.set(v.x||0,v.y||0,v.z||0);if(v.scaleXYZ)node.scale.set(v.scaleXYZ.x??1,v.scaleXYZ.y??1,v.scaleXYZ.z??1);else node.scale.setScalar(v.scale||1);if(v.rotation)node.rotation.set(v.rotation.x||0,v.rotation.y||0,v.rotation.z||0);node.traverse(m=>{if(m.isMesh){m.castShadow=QUALITY_CONFIG.shadows;m.receiveShadow=QUALITY_CONFIG.shadows}if(m.isDirectionalLight&&m.userData.zdeADLLight){m.intensity=v.adlIntensity??2.6;m.castShadow=QUALITY_CONFIG.shadows}});scene.add(node);
  const o={...v,node,mixer,clips,...interiorData,currentAction:null,runtime:{vy:0,velocity:0,onGround:true,jumpHeld:false,inside:false,insideInteriorId:null,returnPosition:null,returnRotation:null,interactHeld:false,opacity:1,pulseScale:1,drawRotation:0},solid:v.solid??(v.modelId?!!MODEL_ASSETS[v.modelId]?.solid:false)};o.behaviors=(v.behaviors||[]).map(b=>({...b,stepHeight:b.stepHeight??.72,groundSnap:b.groundSnap??1.15,maxSlopeAngle:b.maxSlopeAngle??(b.type==='physics'?58:52),time:0,baseX:b.baseX??node.position.x,baseY:b.baseY??node.position.y,baseZ:b.baseZ??node.position.z,baseScaleX:b.baseScaleX??node.scale.x,baseScaleY:b.baseScaleY??node.scale.y,baseScaleZ:b.baseScaleZ??node.scale.z}));
  if(mixer&&clips.length){const idle=clips.find(c=>/idle|stand|rest|breath/i.test(c.name));if(idle){o.currentAction=mixer.clipAction(idle);o.currentAction.play()}}
  if(has(o,'collectible')&&v.visible!==false)node.visible=true;objects.push(o);return o;
@@ -1330,6 +1331,23 @@ function solidObject(o){return ['cube','sphere','house','tree','cylinder','platf
 function overlap(a,b,pad=.018){return a.max.x>b.min.x+pad&&a.min.x<b.max.x-pad&&a.max.z>b.min.z+pad&&a.min.z<b.max.z-pad}
 function actorBox(o){const b=bounds(o);if(has(o,'controller')){const s=b.getSize(new THREE.Vector3()),sx=Math.min(s.x*.14,.14),sz=Math.min(s.z*.14,.14);b.min.x+=sx;b.max.x-=sx;b.min.z+=sz;b.max.z-=sz}return b}
 function overlapDepthXZ(a,b){const x=Math.max(0,Math.min(a.max.x,b.max.x)-Math.max(a.min.x,b.min.x)),z=Math.max(0,Math.min(a.max.z,b.max.z)-Math.max(a.min.z,b.min.z));return x>0&&z>0?Math.min(x,z):0}
+function getRuntimePhysicsData(o){
+ let data=runtimePhysicsMeshCache.get(o.node);
+ o.node.updateWorldMatrix(true,true);
+ if(!data){
+  const meshes=[];o.node.traverse(n=>{if(n.isMesh&&n.geometry)meshes.push(n)});
+  const inverseRoot=new THREE.Matrix4().copy(o.node.matrixWorld).invert(),localBounds=new THREE.Box3();
+  for(const mesh of meshes){
+   if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();
+   const relative=new THREE.Matrix4().multiplyMatrices(inverseRoot,mesh.matrixWorld);
+   localBounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(relative));
+  }
+  data={meshes,localBounds,worldBounds:new THREE.Box3()};
+  runtimePhysicsMeshCache.set(o.node,data);
+ }
+ data.worldBounds.copy(data.localBounds).applyMatrix4(o.node.matrixWorld);
+ return data;
+}
 function groundSurfaceAt(o,x,z,referenceFoot,maxStepUp=.78,maxDrop=2.5){
  const origin=new THREE.Vector3(x,referenceFoot+maxStepUp+.05,z);
  groundRaycaster.set(origin,groundDown);groundRaycaster.near=0;groundRaycaster.far=maxStepUp+maxDrop+.05;
@@ -1348,13 +1366,13 @@ function groundSurfaceAt(o,x,z,referenceFoot,maxStepUp=.78,maxDrop=2.5){
    continue;
   }
   if(!solidObject(q))continue;
-  const box=bounds(q);
+  const collisionData=getRuntimePhysicsData(q),box=collisionData.worldBounds;
   if(x<box.min.x-.02||x>box.max.x+.02||z<box.min.z-.02||z>box.max.z+.02)continue;
-  q.node.traverse(n=>{
-   if(!n.isMesh||!n.geometry)return;
+  for(const n of collisionData.meshes){
+   if(!n.visible||!n.geometry)continue;
    let p=n;while(p&&p!==q.node.parent){if(!p.visible)break;if(p===q.node)break;p=p.parent}
    if(p===q.node){meshes.push(n);owners.set(n,q)}
-  });
+  }
  }
  if(meshes.length){
   for(const hit of groundRaycaster.intersectObjects(meshes,false)){
@@ -1451,7 +1469,7 @@ function moveActor(o,dt){
  let dz=(keys.s||touchKeys.has('s')?1:0)-(keys.w||touchKeys.has('w')?1:0);
  if(dx||dz){
   const n=Math.hypot(dx,dz);dx=dx/n*speed*dt;dz=dz/n*speed*dt;
-  if(dx)moveOnGroundSurface(o,dx,0);if(dz)moveOnGroundSurface(o,0,dz);
+  if(dx||dz)moveOnGroundSurface(o,dx,dz);
   o.node.rotation.y=Math.atan2(dx,dz);setAnimation(o,'walk');
  }else setAnimation(o,'idle');
  const jump=keys.jump||touchKeys.has('jump');
@@ -1493,12 +1511,12 @@ function drive(o,dt){
  const st=(left?1:0)-(right?1:0);
  if(Math.abs(r.velocity)>.12&&st)o.node.rotation.y+=st*steer*dt*Math.sign(r.velocity)*Math.min(1,Math.abs(r.velocity)/3);
  const yaw=o.node.rotation.y,dx=-Math.sin(yaw)*r.velocity*dt,dz=-Math.cos(yaw)*r.velocity*dt;
- if(dx&&!moveOnGroundSurface(o,dx,0))r.velocity*=.2;
- if(dz&&!moveOnGroundSurface(o,0,dz))r.velocity*=.2;
+ if((dx||dz)&&!moveOnGroundSurface(o,dx,dz))r.velocity*=.2;
 }
 function updatePhysicsObject(o,dt){
  if(!has(o,'physics')||has(o,'float')||has(o,'bounce'))return;
  const r=o.runtime,behavior=o.behaviors.find(b=>b.type==='physics'&&b.enabled!==false),gravity=behavior?.gravity??18,old=o.node.position.y;
+ if(r.onGround&&r.vy<=0){r.groundProbeTimer=(r.groundProbeTimer??0)-dt;if(r.groundProbeTimer>0)return;r.groundProbeTimer=QUALITY==='performance'?.18:.10}else r.groundProbeTimer=0;
  r.vy-=gravity*dt;
  const next=old+r.vy*dt,support=groundTop(o,o.node.position.x,o.node.position.z,old,next);
  const footOffset=bounds(o).min.y-o.node.position.y;
@@ -1508,8 +1526,11 @@ function updatePhysicsObject(o,dt){
 }
 function setOpacity(o,opacity){const alpha=THREE.MathUtils.clamp(opacity,0,1);o.node.traverse(n=>{if(!n.isMesh||!n.material)return;for(const m of(Array.isArray(n.material)?n.material:[n.material])){if(!m.userData)m.userData={};if(m.userData.zdeBaseOpacity===undefined){m.userData.zdeBaseOpacity=m.opacity??1;m.userData.zdeBaseTransparent=!!m.transparent;m.userData.zdeBaseDepthWrite=m.depthWrite!==false}m.opacity=m.userData.zdeBaseOpacity*alpha;m.transparent=alpha<.999||m.userData.zdeBaseTransparent;m.depthWrite=alpha<.999?false:m.userData.zdeBaseDepthWrite;m.needsUpdate=true}})}
 function updateBehavior(o,b,dt,target){const n=o.node,p=n.position,r=o.runtime,speed=b.speed??2.2,axis=b.axis==='z'?'z':'x';b.time=(b.time||0)+dt;if(b.type==='rotate')n.rotation.y+=dt*1.8;else if(b.type==='spin'){n.rotation.x+=dt*speed*.55;n.rotation.y+=dt*speed;n.rotation.z+=dt*speed*.3}else if(b.type==='float')p.y=(b.baseY??p.y)+Math.sin(b.time*1.5)*.65;else if(b.type==='bounce')p.y=(b.baseY??p.y)+Math.abs(Math.sin(b.time*2.5))*.8;else if(b.type==='move')p[axis]=(b['base'+axis.toUpperCase()]??p[axis])+Math.sin(b.time*speed)*(b.distance??3);else if(b.type==='patrol'){const phase=(b.time*speed/Math.max(.1,b.distance??3))%4,travel=b.distance??3,wave=phase<1?phase:phase<3?2-phase:phase-4;p[axis]=(b['base'+axis.toUpperCase()]??p[axis])+wave*travel}else if(b.type==='orbit'){const a=b.time*speed,rad=b.radius??2.5;p.x=(b.baseX??p.x)+Math.cos(a)*rad;p.z=(b.baseZ??p.z)+Math.sin(a)*rad}else if(b.type==='pulse'){const f=1+Math.sin(b.time*speed)*(b.amount??.18);n.scale.set((b.baseScaleX??n.scale.x)*f,(b.baseScaleY??n.scale.y)*f,(b.baseScaleZ??n.scale.z)*f)}else if(b.type==='fade'){const min=THREE.MathUtils.clamp(b.minimumOpacity??.22,.05,1);r.opacity=min+(1-min)*(.5+.5*Math.sin(b.time*speed));setOpacity(o,r.opacity)}else if(b.type==='colorCycle'){const h=(b.time*.12)%1;n.traverse(c=>{if(!c.isMesh||!c.material)return;for(const m of(Array.isArray(c.material)?c.material:[c.material]))if(m.color){if(!m.userData)m.userData={};if(!m.userData.zdeBaseColor)m.userData.zdeBaseColor=m.color.clone();m.color.setHSL(h,.72,.56)}})}else if((b.type==='follow'||b.type==='enemyAI'||b.type==='flee'||b.type==='magnet')&&target&&target!==o){const dx=target.node.position.x-p.x,dz=target.node.position.z-p.z,d=Math.hypot(dx,dz),range=b.radius??5;if(d>.001&&(b.type!=='magnet'||d<range)){const sign=b.type==='flee'?-1:1,step=Math.min(d,dt*speed*sign);p.x+=dx/d*step;p.z+=dz/d*step;if(b.type!=='flee')n.rotation.y=Math.atan2(dx,dz)}}else if(b.type==='face'&&target&&target!==o){const dx=target.node.position.x-p.x,dz=target.node.position.z-p.z;if(Math.hypot(dx,dz)>.001){const a=Math.atan2(dx,dz);n.rotation.y+=THREE.MathUtils.clamp(a-n.rotation.y,-speed*dt,speed*dt)}}else if(b.type==='wander'){b.wanderTimer=(b.wanderTimer??0)-dt;if(b.wanderTimer<=0){b.wanderAngle=Math.random()*Math.PI*2;b.wanderTimer=1.5+Math.random()*2.5}const d=b.distance??3,tx=(b.baseX??p.x)+Math.cos(b.wanderAngle)*d,tz=(b.baseZ??p.z)+Math.sin(b.wanderAngle)*d,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz);if(l>.08){p.x+=dx/l*speed*dt;p.z+=dz/l*speed*dt;n.rotation.y=Math.atan2(dx,dz)}}}
-const aatRuntimeCache=new WeakMap();
+const aatRuntimeCache=new WeakMap();let aatRuntimeLastUpdate=0;
 function updateAATRuntime(){
+ const now=performance.now(),interval=QUALITY==='performance'?220:QUALITY==='high'?120:80;
+ if(now-aatRuntimeLastUpdate<interval)return;
+ aatRuntimeLastUpdate=now;
  for(const o of objects){
   const b=o.behaviors?.find(v=>v.type==='aat'&&v.enabled!==false);
   let cache=aatRuntimeCache.get(o.node);
@@ -1520,7 +1541,7 @@ function updateAATRuntime(){
   if(!cache){
    o.node.updateWorldMatrix(true,true);
    const rootBox=new THREE.Box3().setFromObject(o.node),rootSphere=rootBox.getBoundingSphere(new THREE.Sphere()),items=[];
-   o.node.traverse(mesh=>{if(!mesh.isMesh||!mesh.geometry)return;mesh.geometry.computeBoundingSphere();const box=new THREE.Box3().setFromObject(mesh),sphere=box.getBoundingSphere(new THREE.Sphere());items.push({mesh,visible:mesh.visible,castShadow:mesh.castShadow,ratio:sphere.radius/Math.max(rootSphere.radius,.001)})});
+   o.node.traverse(mesh=>{if(!mesh.isMesh||!mesh.geometry)return;if(!mesh.geometry.boundingSphere)mesh.geometry.computeBoundingSphere();const box=new THREE.Box3().setFromObject(mesh),sphere=box.getBoundingSphere(new THREE.Sphere());items.push({mesh,visible:mesh.visible,castShadow:mesh.castShadow,ratio:sphere.radius/Math.max(rootSphere.radius,.001)})});
    const largest=Math.max(0,...items.map(v=>v.ratio));
    cache={radius:Math.max(rootSphere.radius,.25),items:items.map(v=>({...v,main:v.ratio>=largest*.92}))};aatRuntimeCache.set(o.node,cache);
   }
@@ -1530,7 +1551,44 @@ function updateAATRuntime(){
   for(const item of cache.items){const hide=!item.main&&item.ratio<detailCut;item.mesh.visible=item.visible&&!hide;item.mesh.castShadow=item.castShadow&&!hide&&distance<(b.shadowDistance??75)}
  }
 }
-function animate(t){requestAnimationFrame(animate);const dt=Math.min((t-last)/1000||0,.04);last=t;for(const o of objects)if(o.mixer)o.mixer.update(dt);if(ready){if(player){if(has(player,'driving'))drive(player,dt);else moveActor(player,dt);if(!has(player,'driving'))updateInterior(player,dt)}for(const o of objects){for(const b of o.behaviors||[])if(b.enabled!==false){if(o===player&&has(player,'controller')&&['move','patrol','orbit','follow','flee','wander','magnet','enemyAI','float','bounce'].includes(b.type))continue;updateBehavior(o,b,dt,player)}if(!(o===player&&has(player,'controller')))updatePhysicsObject(o,dt);if(player&&o!==player&&has(o,'collectible')&&o.node.visible&&o.node.position.distanceTo(player.node.position)<1.15){o.node.visible=false;score++;scoreEl.textContent='★ '+score}}const cameraTarget=player||cameraFollow;if(cameraTarget?.node){const follow=cameraTarget.node.position,look=new THREE.Vector3(follow.x,follow.y+1,follow.z),desired=new THREE.Vector3(follow.x+5,follow.y+4.2,follow.z+7);camera.position.lerp(desired,1-Math.exp(-dt*4.2));camera.lookAt(look)}}updateAATRuntime();renderer.render(scene,camera)}
+function animate(t){
+ requestAnimationFrame(animate);
+ const dt=Math.min((t-last)/1000||0,.04);last=t;
+ for(const o of objects)if(o.mixer)o.mixer.update(dt);
+ if(ready){
+  if(player){
+   if(has(player,'driving'))drive(player,dt);else moveActor(player,dt);
+   if(!has(player,'driving'))updateInterior(player,dt);
+  }
+  for(const o of objects){
+   for(const b of o.behaviors||[]){
+    if(b.enabled===false)continue;
+    if(o===player&&has(player,'controller')&&['move','patrol','orbit','follow','flee','wander','magnet','enemyAI','float','bounce'].includes(b.type))continue;
+    updateBehavior(o,b,dt,player);
+   }
+   if(!(o===player&&has(player,'controller')))updatePhysicsObject(o,dt);
+   if(player&&o!==player&&has(o,'collectible')&&o.node.visible&&o.node.position.distanceTo(player.node.position)<1.15){
+    o.node.visible=false;score++;scoreEl.textContent='★ '+score;
+   }
+  }
+  const cameraTarget=player||cameraFollow;
+  if(cameraTarget?.node){
+   const follow=cameraTarget.node.position,look=new THREE.Vector3(follow.x,follow.y+1,follow.z),desired=new THREE.Vector3(follow.x+5,follow.y+4.2,follow.z+7);
+   camera.position.lerp(desired,1-Math.exp(-dt*4.2));camera.lookAt(look);
+  }
+ }
+ updateAATRuntime();perfFrames++;
+ if(t-perfLast>=1000){
+  const fps=perfFrames*1000/Math.max(1,t-perfLast);perfFrames=0;perfLast=t;
+  if(QUALITY==='performance'){
+   if(fps<30)adaptivePixelRatio=Math.max(.55,adaptivePixelRatio-.05);
+   else if(fps>54)adaptivePixelRatio=Math.min(QUALITY_CONFIG.pixel,adaptivePixelRatio+.02);
+   const desired=Math.min(devicePixelRatio||1,adaptivePixelRatio);
+   if(Math.abs(renderer.getPixelRatio()-desired)>.025)renderer.setPixelRatio(desired);
+  }
+ }
+ renderer.render(scene,camera);
+}
 function resize(){const w=window.innerWidth,h=window.innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();
 function actionForKey(e){return keyMap[e.code]||keyMap[e.key]||null}window.addEventListener('keydown',e=>{const a=actionForKey(e);if(!a)return;e.preventDefault();keys[a]=true},true);window.addEventListener('keyup',e=>{const a=actionForKey(e);if(a){e.preventDefault();keys[a]=false;if(a==='interact'&&player)player.runtime.interactHeld=false}},true);window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;touchKeys.clear()});
 for(const btn of document.querySelectorAll('[data-key]')){const k=btn.dataset.key;const down=e=>{e.preventDefault();touchKeys.add(k);try{btn.setPointerCapture(e.pointerId)}catch(_){}};const up=e=>{e.preventDefault();touchKeys.delete(k);if(k==='interact'&&player)player.runtime.interactHeld=false};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up)}
