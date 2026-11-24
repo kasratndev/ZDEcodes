@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Zero Down Engine 1.3.2 — Advanced Physics</title>
+<title>Zero Down Engine 1.3.3 — Performance Optimization</title>
 <style>
 :root{--bg:#090d14;--panel:#111925;--panel2:#172333;--line:#29394e;--text:#e8eef8;--muted:#8d9cb0;--blue:#4c8dff;--cyan:#39d6cf;--green:#179b80;--red:#ff647c}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font:13px Inter,Segoe UI,Arial,sans-serif}button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:#1a2637;border-radius:7px;padding:7px 10px}button:hover{border-color:var(--cyan);background:#20334a}button:disabled{opacity:.4;cursor:not-allowed}
@@ -38,13 +38,13 @@
 #aaaLibrary .tile:hover{border-color:var(--cyan);background:#203b4c}
 </style>
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.18/build/index.module.js"}}
 </script>
 </head>
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="brand"><b>ZERO DOWN</b> ENGINE</div><span class="version">1.3.2 ADVANCED PHYSICS</span>
+  <div class="brand"><b>ZERO DOWN</b> ENGINE</div><span class="version">1.3.3 PERFORMANCE</span>
   <div class="actions"><button id="undoBtn" title="Undo · Ctrl+Z" disabled>↶ Undo</button><button id="redoBtn" title="Redo · Ctrl+Y" disabled>↷ Redo</button><button id="saveBtn">Save</button><button id="loadBtn">Load</button><button id="buildBtn" class="build">⬇ Build</button><button id="playBtn" class="play" aria-pressed="false">▶ Play</button></div>
 </header>
 <nav class="toolbar">
@@ -187,6 +187,33 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+let bvhAccelerationEnabled=false;
+const bvhReady=import('three-mesh-bvh').then(module=>{
+ if(typeof module.computeBoundsTree==='function'&&typeof module.acceleratedRaycast==='function'){
+  THREE.BufferGeometry.prototype.computeBoundsTree??=module.computeBoundsTree;
+  THREE.Mesh.prototype.raycast=module.acceleratedRaycast;
+  bvhAccelerationEnabled=true;
+ }
+}).catch(error=>{console.warn('ZDE BVH acceleration unavailable; using native raycasting.',error)});
+const acceleratedGeometryCache=new WeakSet();
+function optimizeStaticGeometry(root){
+ let prepared=0;
+ root.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.geometry)return;
+  const geometry=mesh.geometry;
+  if(!geometry.boundingBox)geometry.computeBoundingBox();
+  if(!geometry.boundingSphere)geometry.computeBoundingSphere();
+  if(mesh.isSkinnedMesh||Object.values(geometry.morphAttributes||{}).some(attribute=>attribute?.length))return;
+  if(acceleratedGeometryCache.has(geometry))return;
+  acceleratedGeometryCache.add(geometry);
+  const position=geometry.getAttribute('position'),triangles=((geometry.index?.count??position?.count??0)/3)|0;
+  if(bvhAccelerationEnabled&&triangles>=1500&&!geometry.boundsTree&&typeof geometry.computeBoundsTree==='function'){
+   try{geometry.computeBoundsTree();prepared++}
+   catch(error){console.warn('ZDE BVH build skipped for one mesh.',error)}
+  }
+ });
+ return prepared;
+}
 
 const $=id=>document.getElementById(id);
 const state={mode:'3d',objects:[],selected:null,nextId:1,playing:false,importing:false,score:0,keys:{},touchKeys:new Set(),cameraFollow:null,worldPreset:'day',quality:'high',playSnapshot:null};
@@ -215,9 +242,13 @@ const behaviorIcons={controller:'🎮',camera:'📷',physics:'🧲',driving:'�
 let scene,camera,renderer,controls,raycaster,groundPlane,hemisphereLight,sunLight,floorMesh,dragObject=null,assetDrag=null,behaviorDrag=null,ghost=null,toastTimer=null,lastFrame=0,suppressTileClick=false;
 let ctx2,animationTime=0,perfFrames=0,perfLast=0;
 const aatEditorCache=new WeakMap();
+let aatEditorLastUpdate=0,adaptiveEditorPixel=.78;
 const viewport=$('viewport'),threeHost=$('threeHost'),twoHost=$('twoHost');
 
 function updateAATVisibility(){
+ const now=performance.now(),interval=state.quality==='performance'?220:state.quality==='high'?120:80;
+ if(now-aatEditorLastUpdate<interval)return;
+ aatEditorLastUpdate=now;
  for(const obj of state.objects){
   const behavior=obj.behaviors?.find(b=>b.type==='aat'&&b.enabled!==false);
   let cache=aatEditorCache.get(obj.node);
@@ -251,13 +282,13 @@ function toast(message){const t=$('toast');t.textContent=message;t.style.opacity
 function updateModelMixers(dt){for(const obj of state.objects){if(obj.mixer)obj.mixer.update(dt)}}
 function applyEditorQuality(tier,notify=false){
  const presets={
-  performance:{pixel:0.85,shadows:false,shadowSize:512,shadowType:THREE.PCFShadowMap,exposure:1.05},
+  performance:{pixel:.78,shadows:false,shadowSize:512,shadowType:THREE.PCFShadowMap,exposure:1.05},
   high:{pixel:1.35,shadows:true,shadowSize:2048,shadowType:THREE.PCFSoftShadowMap,exposure:1.12},
   ultra:{pixel:2,shadows:true,shadowSize:4096,shadowType:THREE.PCFSoftShadowMap,exposure:1.16}
  };
  const key=presets[tier]?tier:'high',q=presets[key];state.quality=key;
  if(renderer){
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,q.pixel));
+  adaptiveEditorPixel=q.pixel;renderer.setPixelRatio(Math.min(devicePixelRatio||1,adaptiveEditorPixel));
   renderer.shadowMap.enabled=q.shadows;renderer.shadowMap.type=q.shadowType;
   renderer.toneMappingExposure=q.exposure;
   if(sunLight){sunLight.castShadow=q.shadows;sunLight.shadow.mapSize.set(q.shadowSize,q.shadowSize);sunLight.shadow.needsUpdate=true}
@@ -284,7 +315,7 @@ function init3D(){
   if(state.playing){updateGame(dt);if(state.mode==='2d')draw2D()}
   updateModelMixers(dt);controls.update();updateAATVisibility();renderer.render(scene,camera);
   perfFrames++;
-  if(t-perfLast>600){const fps=Math.round(perfFrames*1000/(t-perfLast));$('editorFps').textContent=fps+' FPS · '+state.objects.length+' objects';perfFrames=0;perfLast=t}
+  if(t-perfLast>600){const fps=Math.round(perfFrames*1000/(t-perfLast));$('editorFps').textContent=fps+' FPS · '+state.objects.length+' objects';perfFrames=0;perfLast=t;if(state.quality==='performance'){if(fps<30)adaptiveEditorPixel=Math.max(.55,adaptiveEditorPixel-.05);else if(fps>54)adaptiveEditorPixel=Math.min(.78,adaptiveEditorPixel+.02);const desired=Math.min(devicePixelRatio||1,adaptiveEditorPixel);if(Math.abs(renderer.getPixelRatio()-desired)>.025)renderer.setPixelRatio(desired)}}
  });
 }
 function applyWorldPreset(name){
@@ -433,6 +464,7 @@ async function buildGLBModel(modelId){
  imported.position.y-=bounds.min.y;
  imported.position.z-=center.z;
  imported.updateMatrixWorld(true);
+ await bvhReady;optimizeStaticGeometry(imported);
  imported.traverse(child=>{if(child.isMesh){child.castShadow=false;child.receiveShadow=false;child.frustumCulled=true}});
  const node=new THREE.Group();node.add(imported);node.updateMatrixWorld(true);
  let interiorData={interiorColliders:[],interiorFloorBoxes:[],interiorFloorY:null,interiorEntryPoint:null};
@@ -673,7 +705,26 @@ function isSolidObject(o){return ['cube','sphere','house','tree','cylinder','pla
 function worldBounds(obj){obj.node.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(obj.node)}
 function horizontalOverlap(a,b,pad=0){return a.max.x> b.min.x+pad&&a.min.x< b.max.x-pad&&a.max.z>b.min.z+pad&&a.min.z<b.max.z-pad}
 const editorGroundRaycaster=new THREE.Raycaster();
+editorGroundRaycaster.firstHitOnly=true;
 const editorGroundDown=new THREE.Vector3(0,-1,0);
+const editorPhysicsMeshCache=new WeakMap();
+function getEditorPhysicsData(obj){
+ let data=editorPhysicsMeshCache.get(obj.node);
+ obj.node.updateWorldMatrix(true,true);
+ if(!data){
+  const meshes=[];obj.node.traverse(child=>{if(child.isMesh&&child.geometry)meshes.push(child)});
+  const inverseRoot=new THREE.Matrix4().copy(obj.node.matrixWorld).invert(),localBounds=new THREE.Box3();
+  for(const mesh of meshes){
+   if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();
+   const relative=new THREE.Matrix4().multiplyMatrices(inverseRoot,mesh.matrixWorld);
+   localBounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(relative));
+  }
+  data={meshes,localBounds,worldBounds:new THREE.Box3()};
+  editorPhysicsMeshCache.set(obj.node,data);
+ }
+ data.worldBounds.copy(data.localBounds).applyMatrix4(obj.node.matrixWorld);
+ return data;
+}
 function physicsMeshVisible(mesh,root){
  let node=mesh;
  while(node&&node!==root.parent){if(!node.visible)return false;if(node===root)break;node=node.parent}
@@ -698,9 +749,9 @@ function probeGroundSurface(obj,x,z,referenceFoot,maxStepUp=.78,maxDrop=2.35){
    continue;
   }
   if(!isSolidObject(other))continue;
-  const objectBox=worldBounds(other);
+  const collisionData=getEditorPhysicsData(other),objectBox=collisionData.worldBounds;
   if(x<objectBox.min.x-.02||x>objectBox.max.x+.02||z<objectBox.min.z-.02||z>objectBox.max.z+.02)continue;
-  other.node.traverse(child=>{if(child.isMesh&&child.geometry&&physicsMeshVisible(child,other.node)){meshes.push(child);owners.set(child,other)}});
+  for(const child of collisionData.meshes){if(child.visible&&child.geometry&&physicsMeshVisible(child,other.node)){meshes.push(child);owners.set(child,other)}}
  }
  if(meshes.length){
   const hits=editorGroundRaycaster.intersectObjects(meshes,false);
@@ -747,6 +798,7 @@ function applyVerticalPhysics(obj,dt){
  const controller=obj.behaviors.find(b=>b.type==='controller'&&b.enabled!==false);
  const physics=obj.behaviors.find(b=>b.type==='physics'&&b.enabled!==false);
  const gravity=controller?.gravity??physics?.gravity??18;
+ if(r.onGround&&r.vy<=0){r.groundProbeTimer=(r.groundProbeTimer??0)-dt;if(r.groundProbeTimer>0)return;r.groundProbeTimer=state.quality==='performance'?.18:.10}else r.groundProbeTimer=0;
  const surfaces=supportSurfaces(obj,boundsBefore);
  if(r.vy<=0){
   const bodyHeight=boundsBefore.max.y-boundsBefore.min.y;
@@ -891,7 +943,7 @@ function updateGame(dt){
   else {
    const speed=controller?.speed??5.8;let dx=0,dz=0;
    if(key.w||key.up||touch.has('w'))dz-=1;if(key.s||key.down||touch.has('s'))dz+=1;if(key.a||key.left||touch.has('a'))dx-=1;if(key.d||key.right||touch.has('d'))dx+=1;
-   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX)moveOnGroundSurface(player,stepX,0);if(stepZ)moveOnGroundSurface(player,0,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
+   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
    const jumpDown=key.space||touch.has('space');if(jumpDown&&!player.runtime.jumpHeld&&player.runtime.onGround){player.runtime.vy=controller?.jump??7.2;player.runtime.onGround=false;setModelAnimation(player,'jump')}player.runtime.jumpHeld=jumpDown;updateInteriorInteraction(player);
   }
   for(const obj of [...state.objects]){if(obj===player)continue;if(hasBehavior(obj,'collectible')&&obj.node.visible&&obj.node.position.distanceTo(player.node.position)<1.25*(player.node.scale.x||1)){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}
@@ -910,8 +962,7 @@ function updateVehicle(car,dt){
  if(key.space||touch.has('space'))r.velocity*=Math.max(0,1-brake*dt);
  const steering=(left?1:0)-(right?1:0);if(Math.abs(r.velocity)>.12&&steering)car.node.rotation.y+=steering*steer*dt*Math.sign(r.velocity)*Math.min(1,Math.abs(r.velocity)/3);
  const yaw=car.node.rotation.y;const dx=-Math.sin(yaw)*r.velocity*dt,dz=-Math.cos(yaw)*r.velocity*dt;
- if(dx&&!moveOnGroundSurface(car,dx,0))r.velocity*=.25;
- if(dz&&!moveOnGroundSurface(car,0,dz))r.velocity*=.25;
+ if((dx||dz)&&!moveOnGroundSurface(car,dx,dz))r.velocity*=.25;
  r.vy=0;r.onGround=true;
 }
 function interiorEntryWorld(interior){
@@ -1169,6 +1220,33 @@ function makeRuntimeHTML(project,options){
  const runtime=`
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+let bvhAccelerationEnabled=false;
+const bvhReady=import('three-mesh-bvh').then(module=>{
+ if(typeof module.computeBoundsTree==='function'&&typeof module.acceleratedRaycast==='function'){
+  THREE.BufferGeometry.prototype.computeBoundsTree??=module.computeBoundsTree;
+  THREE.Mesh.prototype.raycast=module.acceleratedRaycast;
+  bvhAccelerationEnabled=true;
+ }
+}).catch(error=>{console.warn('ZDE BVH acceleration unavailable; using native raycasting.',error)});
+const acceleratedGeometryCache=new WeakSet();
+function optimizeStaticGeometry(root){
+ let prepared=0;
+ root.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.geometry)return;
+  const geometry=mesh.geometry;
+  if(!geometry.boundingBox)geometry.computeBoundingBox();
+  if(!geometry.boundingSphere)geometry.computeBoundingSphere();
+  if(mesh.isSkinnedMesh||Object.values(geometry.morphAttributes||{}).some(attribute=>attribute?.length))return;
+  if(acceleratedGeometryCache.has(geometry))return;
+  acceleratedGeometryCache.add(geometry);
+  const position=geometry.getAttribute('position'),triangles=((geometry.index?.count??position?.count??0)/3)|0;
+  if(bvhAccelerationEnabled&&triangles>=1500&&!geometry.boundsTree&&typeof geometry.computeBoundsTree==='function'){
+   try{geometry.computeBoundsTree();prepared++}
+   catch(error){console.warn('ZDE BVH build skipped for one mesh.',error)}
+  }
+ });
+ return prepared;
+}
 const PROJECT=JSON.parse(document.getElementById('projectData').textContent);
 const MODEL_ASSETS=JSON.parse(document.getElementById('modelData').textContent);
 const QUALITY=${quality}, TARGET=${target};
@@ -1459,9 +1537,9 @@ for(const btn of document.querySelectorAll('[data-key]')){const k=btn.dataset.ke
 (async()=>{try{for(const v of PROJECT.objects)await loadObject(v);player=objects.find(o=>has(o,'controller'))||objects.find(o=>has(o,'driving'))||null;if(player){player.runtime.vy=0;player.runtime.onGround=true;for(const b of player.behaviors||[]){if(b.type==='camera'){} }}document.getElementById('loading').style.display='none';if(!player){hint.style.display='block';hint.textContent='Add Player Controller or Vehicle Driving to any object to control it.'}else if(TARGET==='desktop')document.getElementById('touchControls').style.display='none';else if(TARGET==='mobile')document.getElementById('touchControls').style.display='flex';else document.getElementById('touchControls').style.display='flex';cameraFollow=objects.find(o=>has(o,'camera'))||player||null;ready=true;requestAnimationFrame(animate)}catch(err){console.error(err);document.getElementById('loading').textContent='Could not load game assets: '+err.message}})();
 `;
  const projectEscaped=safeProject,defsEscaped=safeDefs;
- return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px;pointer-events:auto}.pad button,.action button{border:1px solid #ffffff77;border-radius:12px;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border-radius:50%}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
+ return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.18/build/index.module.js"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px;pointer-events:auto}.pad button,.action button{border:1px solid #ffffff77;border-radius:12px;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border-radius:50%}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
 }
-function serialize(){return{engine:'Zero Down Engine',version:'1.3.2',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
+function serialize(){return{engine:'Zero Down Engine',version:'1.3.3',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
 async function serializeProjectForSave(){
  const project=serialize(),assetData=new Map();
  for(const item of project.objects){
