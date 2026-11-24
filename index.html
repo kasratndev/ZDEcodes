@@ -669,7 +669,7 @@ function hasBehavior(o,type){return o.behaviors?.some(b=>b.type===type&&b.enable
 function playerObject(){return state.objects.find(o=>hasBehavior(o,'controller'))||state.objects.find(o=>hasBehavior(o,'driving'))||null}
 function isVehicle(o){return !!o&&hasBehavior(o,'driving')}
 function controlledObjectBehavior(type){return ['move','patrol','orbit','follow','flee','wander','magnet','enemyAI','float','bounce'].includes(type)}
-function isSolidObject(o){return ['cube','house','tree','cylinder','platform','ground'].includes(o.kind)||(o.kind==='model'&&o.solid!==false&&o.category!=='interior'&&o.category!=='collectible'&&o.category!=='vehicle')}
+function isSolidObject(o){return ['cube','sphere','house','tree','cylinder','platform','ground','enemy'].includes(o.kind)||o.behaviors?.some(b=>b.type==='physics'&&b.enabled!==false)||(o.kind==='model'&&o.solid!==false&&o.category!=='interior'&&o.category!=='collectible'&&o.category!=='vehicle')}
 function worldBounds(obj){obj.node.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(obj.node)}
 function horizontalOverlap(a,b,pad=0){return a.max.x> b.min.x+pad&&a.min.x< b.max.x-pad&&a.max.z>b.min.z+pad&&a.min.z<b.max.z-pad}
 const editorGroundRaycaster=new THREE.Raycaster();
@@ -1248,7 +1248,7 @@ async function loadObject(v){
 }
 function setAnimation(o,motion){if(!o?.mixer||!o.clips?.length)return;const patterns={idle:/idle|stand|rest|breath/i,walk:/walk|run|move|locomotion/i,jump:/jump|leap/i};const clip=o.clips.find(c=>patterns[motion]?.test(c.name));if(!clip){if(motion==='idle'){o.mixer.stopAllAction();o.currentAction=null}return}const next=o.mixer.clipAction(clip);if(o.currentAction===next)return;next.reset().fadeIn(.16).play();if(o.currentAction)o.currentAction.fadeOut(.16);o.currentAction=next}
 function bounds(o){o.node.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(o.node)}
-function solidObject(o){return ['cube','house','tree','cylinder','platform','ground'].includes(o.kind)||(o.kind==='model'&&o.solid!==false&&o.category!=='interior'&&o.category!=='collectible'&&o.category!=='vehicle')}
+function solidObject(o){return ['cube','sphere','house','tree','cylinder','platform','ground','enemy'].includes(o.kind)||o.behaviors?.some(b=>b.type==='physics'&&b.enabled!==false)||(o.kind==='model'&&o.solid!==false&&o.category!=='interior'&&o.category!=='collectible'&&o.category!=='vehicle')}
 function overlap(a,b,pad=.018){return a.max.x>b.min.x+pad&&a.min.x<b.max.x-pad&&a.max.z>b.min.z+pad&&a.min.z<b.max.z-pad}
 function actorBox(o){const b=bounds(o);if(has(o,'controller')){const s=b.getSize(new THREE.Vector3()),sx=Math.min(s.x*.14,.14),sz=Math.min(s.z*.14,.14);b.min.x+=sx;b.max.x-=sx;b.min.z+=sz;b.max.z-=sz}return b}
 function overlapDepthXZ(a,b){const x=Math.max(0,Math.min(a.max.x,b.max.x)-Math.max(a.min.x,b.min.x)),z=Math.max(0,Math.min(a.max.z,b.max.z)-Math.max(a.min.z,b.min.z));return x>0&&z>0?Math.min(x,z):0}
