@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Zero Down Engine 1.4 — Virtual Geometry & Dynamic GI</title>
+<title>Zero Down Engine 1.4.1</title>
 <style>
 :root{--bg:#090d14;--panel:#111925;--panel2:#172333;--line:#29394e;--text:#e8eef8;--muted:#8d9cb0;--blue:#4c8dff;--cyan:#39d6cf;--green:#179b80;--red:#ff647c}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font:13px Inter,Segoe UI,Arial,sans-serif}button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:#1a2637;border-radius:7px;padding:7px 10px}button:hover{border-color:var(--cyan);background:#20334a}button:disabled{opacity:.4;cursor:not-allowed}
@@ -44,7 +44,7 @@
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="brand"><b>ZERO DOWN</b> ENGINE</div><span class="version">1.4 AAA TECHNOLOGY CORE</span>
+  <div class="brand"><b>ZERO DOWN</b> ENGINE</div><span class="version">1.4.1 AAA CORE</span>
   <div class="actions"><button id="undoBtn" title="Undo · Ctrl+Z" disabled>↶ Undo</button><button id="redoBtn" title="Redo · Ctrl+Y" disabled>↷ Redo</button><button id="saveBtn">Save</button><button id="loadBtn">Load</button><button id="buildBtn" class="build">⬇ Build</button><button id="playBtn" class="play" aria-pressed="false">▶ Play</button></div>
 </header>
 <nav class="toolbar">
@@ -109,7 +109,7 @@
       <div class="tile" data-kind="adl"><span class="emoji">☀️</span><small>ADL 2.0 · Dynamic GI</small></div>
       <div class="tile" data-behavior="aat"><span class="emoji">🧬</span><small>AAT 2.0 · Virtual Geometry</small></div>
     </div>
-    <div class="help">ADL 2.0 combines incremental radiance probes, material color-bounce approximation and local cube-map reflections. AAT 2.0 builds spatially sorted triangle clusters with a BVH, frustum culling and screen-space cluster selection. These are ZDE approximations, not exact Lumen/Nanite replacements.</div>
+    <div class="help">ADL 2.0 combines incremental radiance probes, material color-bounce approximation and local cube-map reflections. AAT 2.0 builds spatially sorted triangle clusters with a BVH, per-cluster frustum culling and screen-space shadow prioritization. These are ZDE approximations, not exact Lumen/Nanite replacements.</div>
     <div class="section">BEHAVIORS <em>Drop on object</em></div>
     <div class="grid" id="behaviorLibrary">
       <div class="tile" data-behavior="controller"><span class="emoji">🎮</span><small>Player Controller</small></div>
@@ -168,7 +168,7 @@
     <div id="activeBehaviors"><div class="empty-list">Select an object to see its behaviors.</div></div>
   </aside>
 </main>
-<footer class="status"><span><span class="dot">●</span> Ready</span><span id="statusMode">3D workspace</span><span id="statusCount">0 objects</span><span class="right">Zero Down Engine 1.2 · No-code game creation</span></footer>
+<footer class="status"><span><span class="dot">●</span> Ready</span><span id="statusMode">3D workspace</span><span id="statusCount">0 objects</span><span class="right">No-code creation · ADL 2.0 · AAT 2.0</span></footer>
 </div>
 <div class="modal" id="buildModal" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="buildTitle">
@@ -255,7 +255,7 @@ function createAATSystem(){
  function setTreeVisible(tree,value){if(!tree)return;if(tree.items){for(const item of tree.items){item.mesh.visible=value;item.mesh.castShadow=value&&item.castShadow}return}setTreeVisible(tree.left,value);setTreeVisible(tree.right,value)}
  function updateTree(tree,holder,frustum,cameraPosition,projectionScale,height,minPixels,shadowDistance){
   if(!tree)return;const worldSphere=tree.sphere.clone().applyMatrix4(holder.matrixWorld);if(!frustum.intersectsSphere(worldSphere)){setTreeVisible(tree,false);return}
-  if(tree.items){for(const item of tree.items){const sphere=item.sphere.clone().applyMatrix4(holder.matrixWorld);if(!frustum.intersectsSphere(sphere)){item.mesh.visible=false;item.mesh.castShadow=false;continue}const distance=Math.max(.01,cameraPosition.distanceTo(sphere.center)),pixels=sphere.radius*projectionScale*height/(2*distance),keep=pixels>=minPixels;item.mesh.visible=keep;item.mesh.castShadow=keep&&distance<shadowDistance&&item.castShadow}return}
+  if(tree.items){for(const item of tree.items){const sphere=item.sphere.clone().applyMatrix4(holder.matrixWorld);if(!frustum.intersectsSphere(sphere)){item.mesh.visible=false;item.mesh.castShadow=false;continue}const distance=Math.max(.01,cameraPosition.distanceTo(sphere.center)),pixels=sphere.radius*projectionScale*height/(2*distance);item.mesh.visible=true;item.mesh.castShadow=pixels>=minPixels&&distance<shadowDistance&&item.castShadow}return}
   updateTree(tree.left,holder,frustum,cameraPosition,projectionScale,height,minPixels,shadowDistance);updateTree(tree.right,holder,frustum,cameraPosition,projectionScale,height,minPixels,shadowDistance);
  }
  function build(root,quality){root.updateWorldMatrix(true,true);const candidates=[];root.traverse(n=>{if(n.isMesh&&n.geometry&&!n.userData.zdeAATCluster&&!n.userData.zdeAATHolder)candidates.push(n)});const entries=[],fallback=[];let totalBuilt=0,chunk=quality==='ultra'?256:quality==='performance'?512:384;
@@ -285,7 +285,7 @@ function createADLSystem(){
  function update(objects,camera,renderer,quality,scene,floor,now){
   const cfg=quality==='performance'?{rays:4,fill:.055,interval:145,reflection:0}:quality==='ultra'?{rays:12,fill:.24,interval:75,reflection:6200}:{rays:8,fill:.13,interval:110,reflection:9500};
   for(const obj of objects){if(obj.kind!=='adl'||!obj.node.visible)continue;const p=partsOf(obj.node);if(!p.probes.length)continue;let st=states.get(obj.node);if(!st){st={index:0,lastProbe:0,lastReflection:0};states.set(obj.node,st)}
-   if(now-st.lastProbe>=cfg.interval){st.lastProbe=now;const probe=p.probes[st.index++%p.probes.length],origin=probe.getWorldPosition(new THREE.Vector3()),meshes=floor?[floor]:[];for(const other of objects)if(other!==obj&&other.kind!=='adl'&&other.node.visible)other.node.traverse(n=>{if(n.isMesh&&n.visible)meshes.push(n)});
+   if(now-st.lastProbe>=cfg.interval){st.lastProbe=now;scene.updateMatrixWorld(true);const probe=p.probes[st.index++%p.probes.length],origin=probe.getWorldPosition(new THREE.Vector3()),meshes=floor?[floor]:[];for(const other of objects)if(other!==obj&&other.kind!=='adl'&&other.node.visible)other.node.traverse(n=>{if(n.isMesh&&n.visible)meshes.push(n)});
     const sunPos=p.lights[0]?.getWorldPosition(new THREE.Vector3())||origin.clone().add(new THREE.Vector3(7,11,6)),sum=new THREE.Color(0,0,0);let total=0,hits=0;raycaster.near=.12;raycaster.far=14;
     for(let i=0;i<cfg.rays;i++){raycaster.set(origin,directions[i]);const hit=raycaster.intersectObjects(meshes,false)[0];if(!hit||!hit.face)continue;const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material],mat=mats[hit.face.materialIndex||0]||mats[0];if(!mat?.color)continue;const normal=hit.face.normal.clone().transformDirection(hit.object.matrixWorld),toSun=sunPos.clone().sub(hit.point).normalize(),diffuse=.12+.88*Math.max(0,normal.dot(toSun)),weight=diffuse/(1+hit.distance*.12);sum.addScaledColor(mat.color,weight);total+=weight;hits++}
     if(hits&&total>0){sum.multiplyScalar(1/total);probe.color.copy(sum);probe.intensity=cfg.fill*Math.min(1,total/Math.max(1,hits)*2.2)*Math.min(1,hits/Math.max(2,cfg.rays*.45))}else probe.intensity=0;probe.distance=quality==='performance'?8:quality==='ultra'?17:13;
@@ -675,7 +675,8 @@ function removeObject(id){const i=state.objects.findIndex(o=>o.id===id);if(i<0)r
 function duplicateObject(id){
  if(state.playing){toast('Stop Preview before duplicating objects');return;}
  const original=state.objects.find(o=>o.id===id);if(!original)return;
- const before=beginHistory();const node=original.node.clone(true);
+ const before=beginHistory();const node=original.kind==='adl'?make3D('adl'):original.node.clone(true);
+ if(original.kind==='adl')setADLIntensity({node},original.adlIntensity??2.6);
  node.traverse(child=>{if(child.isMesh){child.castShadow=false;child.receiveShadow=false}});
  const copy={...original,id:state.nextId++,name:(original.name||original.kind)+' Copy',x:original.x,z:original.z,x2:(original.x2||viewport.clientWidth/2)+28,y2:(original.y2||viewport.clientHeight/2)+28,behaviors:(original.behaviors||[]).map(b=>({...b,time:0})),runtime:{vy:0,onGround:true,time:0,baseY:original.node.position.y,jumpHeld:false,velocity:0,inside:false,insideInteriorId:null,returnPosition:null,returnRotation:null,interactHeld:false},node,mixer:null,currentAction:null,clips:original.clips||[],locked:false};
  node.position.copy(original.node.position);node.position.x+=1.25;node.position.z+=1.25;node.rotation.copy(original.node.rotation);node.scale.copy(original.node.scale);node.visible=original.node.visible;
@@ -1307,7 +1308,7 @@ function createAATSystem(){
  function setTreeVisible(tree,value){if(!tree)return;if(tree.items){for(const item of tree.items){item.mesh.visible=value;item.mesh.castShadow=value&&item.castShadow}return}setTreeVisible(tree.left,value);setTreeVisible(tree.right,value)}
  function updateTree(tree,holder,frustum,cameraPosition,projectionScale,height,minPixels,shadowDistance){
   if(!tree)return;const worldSphere=tree.sphere.clone().applyMatrix4(holder.matrixWorld);if(!frustum.intersectsSphere(worldSphere)){setTreeVisible(tree,false);return}
-  if(tree.items){for(const item of tree.items){const sphere=item.sphere.clone().applyMatrix4(holder.matrixWorld);if(!frustum.intersectsSphere(sphere)){item.mesh.visible=false;item.mesh.castShadow=false;continue}const distance=Math.max(.01,cameraPosition.distanceTo(sphere.center)),pixels=sphere.radius*projectionScale*height/(2*distance),keep=pixels>=minPixels;item.mesh.visible=keep;item.mesh.castShadow=keep&&distance<shadowDistance&&item.castShadow}return}
+  if(tree.items){for(const item of tree.items){const sphere=item.sphere.clone().applyMatrix4(holder.matrixWorld);if(!frustum.intersectsSphere(sphere)){item.mesh.visible=false;item.mesh.castShadow=false;continue}const distance=Math.max(.01,cameraPosition.distanceTo(sphere.center)),pixels=sphere.radius*projectionScale*height/(2*distance);item.mesh.visible=true;item.mesh.castShadow=pixels>=minPixels&&distance<shadowDistance&&item.castShadow}return}
   updateTree(tree.left,holder,frustum,cameraPosition,projectionScale,height,minPixels,shadowDistance);updateTree(tree.right,holder,frustum,cameraPosition,projectionScale,height,minPixels,shadowDistance);
  }
  function build(root,quality){root.updateWorldMatrix(true,true);const candidates=[];root.traverse(n=>{if(n.isMesh&&n.geometry&&!n.userData.zdeAATCluster&&!n.userData.zdeAATHolder)candidates.push(n)});const entries=[],fallback=[];let totalBuilt=0,chunk=quality==='ultra'?256:quality==='performance'?512:384;
@@ -1332,7 +1333,7 @@ function createADLSystem(){
  function update(objects,camera,renderer,quality,scene,floor,now){
   const cfg=quality==='performance'?{rays:4,fill:.055,interval:145,reflection:0}:quality==='ultra'?{rays:12,fill:.24,interval:75,reflection:6200}:{rays:8,fill:.13,interval:110,reflection:9500};
   for(const obj of objects){if(obj.kind!=='adl'||!obj.node.visible)continue;const p=partsOf(obj.node);if(!p.probes.length)continue;let st=states.get(obj.node);if(!st){st={index:0,lastProbe:0,lastReflection:0};states.set(obj.node,st)}
-   if(now-st.lastProbe>=cfg.interval){st.lastProbe=now;const probe=p.probes[st.index++%p.probes.length],origin=probe.getWorldPosition(new THREE.Vector3()),meshes=floor?[floor]:[];for(const other of objects)if(other!==obj&&other.kind!=='adl'&&other.node.visible)other.node.traverse(n=>{if(n.isMesh&&n.visible)meshes.push(n)});
+   if(now-st.lastProbe>=cfg.interval){st.lastProbe=now;scene.updateMatrixWorld(true);const probe=p.probes[st.index++%p.probes.length],origin=probe.getWorldPosition(new THREE.Vector3()),meshes=floor?[floor]:[];for(const other of objects)if(other!==obj&&other.kind!=='adl'&&other.node.visible)other.node.traverse(n=>{if(n.isMesh&&n.visible)meshes.push(n)});
     const sunPos=p.lights[0]?.getWorldPosition(new THREE.Vector3())||origin.clone().add(new THREE.Vector3(7,11,6)),sum=new THREE.Color(0,0,0);let total=0,hits=0;raycaster.near=.12;raycaster.far=14;
     for(let i=0;i<cfg.rays;i++){raycaster.set(origin,directions[i]);const hit=raycaster.intersectObjects(meshes,false)[0];if(!hit||!hit.face)continue;const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material],mat=mats[hit.face.materialIndex||0]||mats[0];if(!mat?.color)continue;const normal=hit.face.normal.clone().transformDirection(hit.object.matrixWorld),toSun=sunPos.clone().sub(hit.point).normalize(),diffuse=.12+.88*Math.max(0,normal.dot(toSun)),weight=diffuse/(1+hit.distance*.12);sum.addScaledColor(mat.color,weight);total+=weight;hits++}
     if(hits&&total>0){sum.multiplyScalar(1/total);probe.color.copy(sum);probe.intensity=cfg.fill*Math.min(1,total/Math.max(1,hits)*2.2)*Math.min(1,hits/Math.max(2,cfg.rays*.45))}else probe.intensity=0;probe.distance=quality==='performance'?8:quality==='ultra'?17:13;
@@ -1353,9 +1354,10 @@ for(const btn of document.querySelectorAll('[data-key]')){const k=btn.dataset.ke
 (async()=>{try{for(const v of PROJECT.objects)await loadObject(v);player=objects.find(o=>has(o,'controller'))||objects.find(o=>has(o,'driving'))||null;if(player){player.runtime.vy=0;player.runtime.onGround=true;for(const b of player.behaviors||[]){if(b.type==='camera'){} }}document.getElementById('loading').style.display='none';if(!player){hint.style.display='block';hint.textContent='Add Player Controller or Vehicle Driving to any object to control it.'}else if(TARGET==='desktop')document.getElementById('touchControls').style.display='none';else if(TARGET==='mobile')document.getElementById('touchControls').style.display='flex';else document.getElementById('touchControls').style.display='flex';cameraFollow=objects.find(o=>has(o,'camera'))||player||null;ready=true;requestAnimationFrame(animate)}catch(err){console.error(err);document.getElementById('loading').textContent='Could not load game assets: '+err.message}})();
 `;
  const projectEscaped=safeProject,defsEscaped=safeDefs;
+ // Separate HTML document for the exported game; its title is not a duplicate in the editor page.
  return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px;pointer-events:auto}.pad button,.action button{border:1px solid #ffffff77;border-radius:12px;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border-radius:50%}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
 }
-function serialize(){return{engine:'Zero Down Engine',version:'1.4',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
+function serialize(){return{engine:'Zero Down Engine',version:'1.4.1',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
 async function serializeProjectForSave(){
  const project=serialize(),assetData=new Map();
  for(const item of project.objects){
@@ -1385,6 +1387,7 @@ $('loadBtn').onclick=()=>$('projectFile').click();
 async function restoreProjectData(data,notify=true){
  const keepSelected=state.selected;
  const oldNodes=state.objects.map(old=>old.node);
+ for(const old of state.objects)if(old.kind==='adl')editorADLSystem.release(old,state.objects);
  for(const old of state.objects)stopObjectMixer(old);
  disposeSceneObjectResources(oldNodes,[]);
  for(const old of state.objects)scene.remove(old.node);
