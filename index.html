@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Zero Down Engine 1.3.1 — Runtime Bug Fixes</title>
+<title>Zero Down Engine 1.3.2 — Advanced Physics</title>
 <style>
 :root{--bg:#090d14;--panel:#111925;--panel2:#172333;--line:#29394e;--text:#e8eef8;--muted:#8d9cb0;--blue:#4c8dff;--cyan:#39d6cf;--green:#179b80;--red:#ff647c}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font:13px Inter,Segoe UI,Arial,sans-serif}button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:#1a2637;border-radius:7px;padding:7px 10px}button:hover{border-color:var(--cyan);background:#20334a}button:disabled{opacity:.4;cursor:not-allowed}
@@ -44,7 +44,7 @@
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="brand"><b>ZERO DOWN</b> ENGINE</div><span class="version">1.3.1 BUG FIXES</span>
+  <div class="brand"><b>ZERO DOWN</b> ENGINE</div><span class="version">1.3.2 ADVANCED PHYSICS</span>
   <div class="actions"><button id="undoBtn" title="Undo · Ctrl+Z" disabled>↶ Undo</button><button id="redoBtn" title="Redo · Ctrl+Y" disabled>↷ Redo</button><button id="saveBtn">Save</button><button id="loadBtn">Load</button><button id="buildBtn" class="build">⬇ Build</button><button id="playBtn" class="play" aria-pressed="false">▶ Play</button></div>
 </header>
 <nav class="toolbar">
@@ -492,8 +492,8 @@ function addBehavior(obj,type){
  const p=obj.node.position,sc=obj.node.scale;
  const behavior={type,enabled:true,time:0,baseX:p.x,baseY:p.y,baseZ:p.z,baseX2:obj.x2,baseY2:obj.y2,baseScaleX:sc.x,baseScaleY:sc.y,baseScaleZ:sc.z};
  if(type==='aat'){behavior.detailThreshold=.035;behavior.shadowDistance=75;behavior.screenSpaceLOD=true}
- if(type==='controller'){behavior.speed=5.8;behavior.jump=7.2;behavior.gravity=18;obj.runtime.vy=0;obj.runtime.onGround=true;obj.runtime.jumpHeld=false}
- if(type==='physics'){behavior.gravity=18;obj.runtime.vy=0;obj.runtime.onGround=false}
+ if(type==='controller'){behavior.speed=5.8;behavior.jump=7.2;behavior.gravity=18;behavior.stepHeight=.72;behavior.groundSnap=1.15;behavior.maxSlopeAngle=52;obj.runtime.vy=0;obj.runtime.onGround=true;obj.runtime.jumpHeld=false}
+ if(type==='physics'){behavior.gravity=18;behavior.maxSlopeAngle=58;obj.runtime.vy=0;obj.runtime.onGround=false}
  if(type==='driving'){behavior.maxSpeed=15;behavior.acceleration=9;behavior.brake=15;behavior.steering=2.1;obj.runtime.velocity=0;obj.runtime.vy=0;obj.runtime.onGround=true;if(!hasBehavior(obj,'camera'))obj.behaviors.push({type:'camera',enabled:true,time:0,baseX:p.x,baseY:p.y,baseZ:p.z,baseX2:obj.x2,baseY2:obj.y2,baseScaleX:sc.x,baseScaleY:sc.y,baseScaleZ:sc.z})}
  if(type==='interior') {behavior.enterRadius=3.8;behavior.exitRadius=2.2}
  if(['move','patrol','follow','flee','wander','enemyAI','magnet'].includes(type)){behavior.speed=type==='magnet'?5:2.2;behavior.distance=3;behavior.distance2D=90;behavior.radius=5;behavior.radius2D=180;behavior.axis='x'}
@@ -540,7 +540,7 @@ function refresh(){
     ${axisControl('X','x',THREE.MathUtils.radToDeg(r.x),-180,180,1,'rotation','°')}${axisControl('Y','y',THREE.MathUtils.radToDeg(r.y),-180,180,1,'rotation','°')}${axisControl('Z','z',THREE.MathUtils.radToDeg(r.z),-180,180,1,'rotation','°')}
     <button class="wide-btn" id="resetRotation">↺ Reset rotation</button>
    </div>
-   ${controller?`<div class="setting-card"><div class="setting-head"><span>🏃 Movement speed</span><strong id="speedReadout">${(controller.speed??5.8).toFixed(1)}</strong></div><input type="range" min="1" max="12" step="0.2" value="${controller.speed??5.8}" data-setting="speed"><div class="setting-head" style="margin:10px 0 8px"><span>🦘 Jump height</span><strong id="jumpReadout">${(controller.jump??7.2).toFixed(1)}</strong></div><input type="range" min="2" max="12" step="0.2" value="${controller.jump??7.2}" data-setting="jump"><div class="setting-head" style="margin:10px 0 8px"><span>🌍 Gravity</span><strong id="gravityReadout">${(controller.gravity??18).toFixed(1)}</strong></div><input type="range" min="5" max="30" step="0.5" value="${controller.gravity??18}" data-setting="gravity"></div>`:''}
+   ${controller?`<div class="setting-card"><div class="setting-head"><span>🏃 Movement speed</span><strong id="speedReadout">${(controller.speed??5.8).toFixed(1)}</strong></div><input type="range" min="1" max="12" step="0.2" value="${controller.speed??5.8}" data-setting="speed"><div class="setting-head" style="margin:10px 0 8px"><span>🦘 Jump height</span><strong id="jumpReadout">${(controller.jump??7.2).toFixed(1)}</strong></div><input type="range" min="2" max="12" step="0.2" value="${controller.jump??7.2}" data-setting="jump"><div class="setting-head" style="margin:10px 0 8px"><span>🌍 Gravity</span><strong id="gravityReadout">${(controller.gravity??18).toFixed(1)}</strong></div><input type="range" min="5" max="30" step="0.5" value="${controller.gravity??18}" data-setting="gravity"><div class="setting-head" style="margin:10px 0 8px"><span>🧗 Maximum slope</span><strong id="slopeReadout">${(controller.maxSlopeAngle??52).toFixed(0)}°</strong></div><input type="range" min="20" max="65" step="1" value="${controller.maxSlopeAngle??52}" data-setting="maxSlope"><div class="setting-head" style="margin:10px 0 8px"><span>🪜 Step height</span><strong id="stepHeightReadout">${(controller.stepHeight??.72).toFixed(2)}</strong></div><input type="range" min="0.2" max="1.5" step="0.05" value="${controller.stepHeight??.72}" data-setting="stepHeight"></div>`:''}
    ${physics&&!controller?`<div class="setting-card"><div class="setting-head"><span>🌍 Gravity</span><strong id="physicsGravityReadout">${(physics.gravity??18).toFixed(1)}</strong></div><input type="range" min="5" max="30" step="0.5" value="${physics.gravity??18}" data-setting="physicsGravity"></div>`:''}
    ${driving?`<div class="setting-card"><div class="setting-head"><span>🚗 Maximum speed</span><strong id="maxSpeedReadout">${(driving.maxSpeed??15).toFixed(1)}</strong></div><input type="range" min="5" max="35" step="1" value="${driving.maxSpeed??15}" data-setting="maxSpeed"><div class="setting-head" style="margin:10px 0 8px"><span>⚙️ Acceleration</span><strong id="accelReadout">${(driving.acceleration??9).toFixed(1)}</strong></div><input type="range" min="2" max="20" step="0.5" value="${driving.acceleration??9}" data-setting="acceleration"><div class="setting-head" style="margin:10px 0 8px"><span>↪ Steering</span><strong id="steeringReadout">${(driving.steering??2.1).toFixed(1)}</strong></div><input type="range" min="0.5" max="4" step="0.1" value="${driving.steering??2.1}" data-setting="steering"></div>`:''}
    ${obj.category==='interior'?`<div class="setting-card"><div class="setting-head"><span>🧱 Wall colliders / Floor patches</span><strong>${obj.interiorColliders?.length||0} / ${obj.interiorFloorBoxes?.length||0}</strong></div><div class="setting-note">Wall and floor collision shapes are generated in the model's corrected local coordinates. Entry uses a safe point on the largest detected floor patch.</div></div>`:''}`;
@@ -565,6 +565,8 @@ function refresh(){
     else if(setting==='speed'&&controller){controller.speed=value;$('speedReadout').textContent=value.toFixed(1)}
     else if(setting==='jump'&&controller){controller.jump=value;$('jumpReadout').textContent=value.toFixed(1)}
     else if(setting==='gravity'&&controller){controller.gravity=value;$('gravityReadout').textContent=value.toFixed(1)}
+     else if(setting==='maxSlope'&&controller){controller.maxSlopeAngle=value;$('slopeReadout').textContent=value.toFixed(0)+'°'}
+     else if(setting==='stepHeight'&&controller){controller.stepHeight=value;$('stepHeightReadout').textContent=value.toFixed(2)}
     else if(setting==='physicsGravity'&&physics){physics.gravity=value;$('physicsGravityReadout').textContent=value.toFixed(1)}
     else if(setting==='maxSpeed'&&driving){driving.maxSpeed=value;$('maxSpeedReadout').textContent=value.toFixed(1)}
     else if(setting==='acceleration'&&driving){driving.acceleration=value;$('accelReadout').textContent=value.toFixed(1)}
@@ -670,20 +672,63 @@ function controlledObjectBehavior(type){return ['move','patrol','orbit','follow'
 function isSolidObject(o){return ['cube','house','tree','cylinder','platform','ground'].includes(o.kind)||(o.kind==='model'&&o.solid!==false&&o.category!=='interior'&&o.category!=='collectible'&&o.category!=='vehicle')}
 function worldBounds(obj){obj.node.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(obj.node)}
 function horizontalOverlap(a,b,pad=0){return a.max.x> b.min.x+pad&&a.min.x< b.max.x-pad&&a.max.z>b.min.z+pad&&a.min.z<b.max.z-pad}
-function supportSurfaces(obj,bounds){
- const surfaces=[{top:0,box:null}];
+const editorGroundRaycaster=new THREE.Raycaster();
+const editorGroundDown=new THREE.Vector3(0,-1,0);
+function physicsMeshVisible(mesh,root){
+ let node=mesh;
+ while(node&&node!==root.parent){if(!node.visible)return false;if(node===root)break;node=node.parent}
+ return node===root;
+}
+function probeGroundSurface(obj,x,z,referenceFoot,maxStepUp=.78,maxDrop=2.35){
+ const origin=new THREE.Vector3(x,referenceFoot+maxStepUp+.05,z);
+ editorGroundRaycaster.set(origin,editorGroundDown);
+ editorGroundRaycaster.near=0;editorGroundRaycaster.far=maxStepUp+maxDrop+.05;
+ const meshes=[],owners=new Map();let best=null;
  for(const other of state.objects){
-  if(other===obj||!(['ground','platform'].includes(other.kind)||(other.kind==='model'&&other.category==='platform')))continue;
-  const box=worldBounds(other);
-  if(horizontalOverlap(bounds,box,-0.02))surfaces.push({top:box.max.y,box});
+  if(other===obj||other.node?.visible===false)continue;
+  if(other.id===obj.runtime?.insideInteriorId&&other.category==='interior'){
+   other.node.updateMatrixWorld(true);
+   for(const patch of other.interiorFloorBoxes||[]){
+    const worldBox=patch.clone().applyMatrix4(other.node.matrixWorld);
+    if(x>=worldBox.min.x&&x<=worldBox.max.x&&z>=worldBox.min.z&&z<=worldBox.max.z&&worldBox.max.y<=referenceFoot+maxStepUp+.05&&worldBox.max.y>=referenceFoot-maxDrop){
+     const candidate={height:worldBox.max.y,normal:new THREE.Vector3(0,1,0),object:other,mesh:null};
+     if(!best||candidate.height>best.height)best=candidate;
+    }
+   }
+   continue;
+  }
+  if(!isSolidObject(other))continue;
+  const objectBox=worldBounds(other);
+  if(x<objectBox.min.x-.02||x>objectBox.max.x+.02||z<objectBox.min.z-.02||z>objectBox.max.z+.02)continue;
+  other.node.traverse(child=>{if(child.isMesh&&child.geometry&&physicsMeshVisible(child,other.node)){meshes.push(child);owners.set(child,other)}});
  }
+ if(meshes.length){
+  const hits=editorGroundRaycaster.intersectObjects(meshes,false);
+  for(const hit of hits){
+   if(!hit.face)continue;
+   const height=hit.point.y;
+   if(height>referenceFoot+maxStepUp+.05||height<referenceFoot-maxDrop)continue;
+   const normal=hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize();
+   const owner=owners.get(hit.object);
+   const ownLimit=obj.behaviors?.find(b=>b.type==='controller'||b.type==='physics')?.maxSlopeAngle;
+   const maxSlope=THREE.MathUtils.degToRad(ownLimit??owner?.behaviors?.find(b=>b.type==='physics'||b.type==='controller')?.maxSlopeAngle??58);
+   if(normal.y<Math.cos(maxSlope))continue;
+   if(!best||height>best.height)best={height,normal,object:owner,mesh:hit.object};
+  }
+ }
+ return best;
+}
+function supportSurfaces(obj,bounds){
+ const surfaces=[{top:0,box:null,object:null,normal:new THREE.Vector3(0,1,0)}];
+ const ground=probeGroundSurface(obj,obj.node.position.x,obj.node.position.z,bounds.min.y,.82,2.45);
+ if(ground)surfaces.push({top:ground.height,box:null,object:ground.object,normal:ground.normal,mesh:ground.mesh});
  for(const interior of state.objects){
   if(interior.id!==obj.runtime?.insideInteriorId)continue;
-  interior.node.updateWorldMatrix(true,true);
+  interior.node.updateMatrixWorld(true);
   const patches=interior.interiorFloorBoxes?.length?interior.interiorFloorBoxes:(interior.interiorFloorBox?[interior.interiorFloorBox]:[]);
   for(const localBox of patches){
    const box=localBox.clone().applyMatrix4(interior.node.matrixWorld);
-   if(horizontalOverlap(bounds,box,-0.02))surfaces.push({top:box.max.y,box});
+   if(horizontalOverlap(bounds,box,-.02))surfaces.push({top:box.max.y,box,object:interior,normal:new THREE.Vector3(0,1,0)});
   }
  }
  return surfaces.sort((a,b)=>b.top-a.top);
@@ -696,36 +741,20 @@ function settleOnSupport(obj){
  else obj.runtime.onGround=false;
 }
 function applyVerticalPhysics(obj,dt){
- const r=obj.runtime;
- const boundsBefore=worldBounds(obj);
- const previousFoot=boundsBefore.min.y;
- const controller=obj.behaviors.find(b=>b.type==='controller');
- const physics=obj.behaviors.find(b=>b.type==='physics');
+ const r=obj.runtime,boundsBefore=worldBounds(obj),previousFoot=boundsBefore.min.y;
+ const controller=obj.behaviors.find(b=>b.type==='controller'&&b.enabled!==false);
+ const physics=obj.behaviors.find(b=>b.type==='physics'&&b.enabled!==false);
  const gravity=controller?.gravity??physics?.gravity??18;
  const surfaces=supportSurfaces(obj,boundsBefore);
- // Keep a grounded object attached to its support instead of letting tiny
- // floating-point/frame-step differences make it alternate between air/ground.
  if(r.vy<=0){
-  const standing=surfaces.find(item=>Math.abs(previousFoot-item.top)<=0.09);
-  if(standing){
-   obj.node.position.y+=standing.top-previousFoot;
-   r.vy=0;
-   r.onGround=true;
-   return;
-  }
+  const standing=surfaces.find(item=>Math.abs(previousFoot-item.top)<=.11);
+  if(standing){obj.node.position.y+=standing.top-previousFoot;r.vy=0;r.onGround=true;return}
  }
- r.vy-=gravity*dt;
- obj.node.position.y+=r.vy*dt;
- const boundsAfter=worldBounds(obj);
- const currentFoot=boundsAfter.min.y;
+ r.vy-=gravity*dt;obj.node.position.y+=r.vy*dt;
+ const boundsAfter=worldBounds(obj),currentFoot=boundsAfter.min.y;
  if(r.vy<=0){
-  const landing=supportSurfaces(obj,boundsAfter).find(item=>previousFoot>=item.top-0.12&&currentFoot<=item.top+0.08);
-  if(landing){
-   obj.node.position.y+=landing.top-currentFoot;
-   r.vy=0;
-   r.onGround=true;
-   return;
-  }
+  const landing=supportSurfaces(obj,boundsAfter).find(item=>previousFoot>=item.top-.16&&currentFoot<=item.top+.09);
+  if(landing){obj.node.position.y+=landing.top-currentFoot;r.vy=0;r.onGround=true;return}
  }
  r.onGround=false;
 }
@@ -743,41 +772,56 @@ function overlapDepthXZ(a,b){
  const oz=Math.max(0,Math.min(a.max.z,b.max.z)-Math.max(a.min.z,b.min.z));
  return ox>0&&oz>0?Math.min(ox,oz):0;
 }
-function collidesAt(obj,x,z){
- const current=collisionBounds(obj),oldX=obj.node.position.x,oldZ=obj.node.position.z;
- obj.node.position.x=x;obj.node.position.z=z;
- const candidate=collisionBounds(obj);
- obj.node.position.x=oldX;obj.node.position.z=oldZ;
+function collidesAt(obj,x,z,ignoreObjects=[],candidateY=obj.node.position.y){
+ const current=collisionBounds(obj),oldPosition=obj.node.position.clone();
+ obj.node.position.set(x,candidateY,z);const candidate=collisionBounds(obj);obj.node.position.copy(oldPosition);
  const activeInterior=state.objects.find(q=>q.id===obj.runtime?.insideInteriorId)||null;
  const activeInteriorBounds=activeInterior?worldBounds(activeInterior):null;
  for(const other of state.objects){
-  if(other===obj)continue;
+  if(other===obj||ignoreObjects.includes(other))continue;
   let solids=[];
   if(other.category==='interior'){
    if(obj.runtime?.insideInteriorId!==other.id)continue;
-   other.node.updateWorldMatrix(true,true);
-   solids=(other.interiorColliders||[]).map(box=>box.clone().applyMatrix4(other.node.matrixWorld));
+   other.node.updateMatrixWorld(true);solids=(other.interiorColliders||[]).map(box=>box.clone().applyMatrix4(other.node.matrixWorld));
   }else{
    if(!isSolidObject(other))continue;
    if(activeInteriorBounds&&other.category==='building'){
     const ob=worldBounds(other);
-    const overlapsInterior=ob.max.x>activeInteriorBounds.min.x&&ob.min.x<activeInteriorBounds.max.x&&ob.max.z>activeInteriorBounds.min.z&&ob.min.z<activeInteriorBounds.max.z;
-    if(overlapsInterior)continue;
+    if(ob.max.x>activeInteriorBounds.min.x&&ob.min.x<activeInteriorBounds.max.x&&ob.max.z>activeInteriorBounds.min.z&&ob.min.z<activeInteriorBounds.max.z)continue;
    }
    solids=[worldBounds(other)];
   }
   for(const solid of solids){
    const vertical=candidate.min.y<solid.max.y-.035&&candidate.max.y>solid.min.y+.035;
    if(!vertical)continue;
-   const nextDepth=overlapDepthXZ(candidate,solid);
-   if(nextDepth<=.018)continue;
+   const nextDepth=overlapDepthXZ(candidate,solid);if(nextDepth<=.018)continue;
    const previousDepth=overlapDepthXZ(current,solid);
-   // Permit gradual escape from objects that were already intersecting the actor at spawn.
    if(previousDepth>.018&&nextDepth<previousDepth-.001)continue;
    return true;
   }
  }
  return false;
+}
+function moveOnGroundSurface(obj,dx,dz){
+ const nx=obj.node.position.x+dx,nz=obj.node.position.z+dz,r=obj.runtime;
+ const c=obj.behaviors.find(b=>b.type==='controller'&&b.enabled!==false);
+ const stepHeight=c?.stepHeight??.72,groundSnap=c?.groundSnap??1.15;
+ const maxSlope=THREE.MathUtils.degToRad(c?.maxSlopeAngle??52),foot=worldBounds(obj).min.y;
+ let nextY=obj.node.position.y,ignore=[],followed=false;
+ if(r.onGround&&r.vy<=.05){
+  let hit=probeGroundSurface(obj,nx,nz,foot,stepHeight,groundSnap);
+  if(!r.insideInteriorId&&(!hit||hit.height<0)&&foot>=-groundSnap&&foot<=stepHeight){
+   if(!hit||hit.height<0)hit={height:0,normal:new THREE.Vector3(0,1,0),object:null};
+  }
+  if(hit&&hit.normal.y>=Math.cos(maxSlope)){
+   const rise=hit.height-foot;
+   if(rise<=stepHeight&&rise>=-groundSnap){nextY+=rise;if(hit.object)ignore.push(hit.object);followed=true}
+  }
+ }
+ if(collidesAt(obj,nx,nz,ignore,nextY))return false;
+ obj.node.position.set(nx,nextY,nz);
+ if(followed){r.vy=0;r.onGround=true}
+ return true;
 }
 function setObjectOpacity(obj,opacity){
  const alpha=THREE.MathUtils.clamp(opacity,0,1);
@@ -839,7 +883,7 @@ function updateGame(dt){
   else {
    const speed=controller?.speed??5.8;let dx=0,dz=0;
    if(key.w||key.up||touch.has('w'))dz-=1;if(key.s||key.down||touch.has('s'))dz+=1;if(key.a||key.left||touch.has('a'))dx-=1;if(key.d||key.right||touch.has('d'))dx+=1;
-   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX&&!collidesAt(player,player.node.position.x+stepX,player.node.position.z))player.node.position.x+=stepX;if(stepZ&&!collidesAt(player,player.node.position.x,player.node.position.z+stepZ))player.node.position.z+=stepZ;player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
+   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX)moveOnGroundSurface(player,stepX,0);if(stepZ)moveOnGroundSurface(player,0,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
    const jumpDown=key.space||touch.has('space');if(jumpDown&&!player.runtime.jumpHeld&&player.runtime.onGround){player.runtime.vy=controller?.jump??7.2;player.runtime.onGround=false;setModelAnimation(player,'jump')}player.runtime.jumpHeld=jumpDown;updateInteriorInteraction(player);
   }
   for(const obj of [...state.objects]){if(obj===player)continue;if(hasBehavior(obj,'collectible')&&obj.node.visible&&obj.node.position.distanceTo(player.node.position)<1.25*(player.node.scale.x||1)){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}
@@ -858,8 +902,8 @@ function updateVehicle(car,dt){
  if(key.space||touch.has('space'))r.velocity*=Math.max(0,1-brake*dt);
  const steering=(left?1:0)-(right?1:0);if(Math.abs(r.velocity)>.12&&steering)car.node.rotation.y+=steering*steer*dt*Math.sign(r.velocity)*Math.min(1,Math.abs(r.velocity)/3);
  const yaw=car.node.rotation.y;const dx=-Math.sin(yaw)*r.velocity*dt,dz=-Math.cos(yaw)*r.velocity*dt;
- if(dx&&!collidesAt(car,car.node.position.x+dx,car.node.position.z))car.node.position.x+=dx;else if(dx)r.velocity*=.25;
- if(dz&&!collidesAt(car,car.node.position.x,car.node.position.z+dz))car.node.position.z+=dz;else if(dz)r.velocity*=.25;
+ if(dx&&!moveOnGroundSurface(car,dx,0))r.velocity*=.25;
+ if(dz&&!moveOnGroundSurface(car,0,dz))r.velocity*=.25;
  r.vy=0;r.onGround=true;
 }
 function interiorEntryWorld(interior){
@@ -1137,7 +1181,7 @@ renderer.shadowMap.enabled=QUALITY_CONFIG.shadows;renderer.shadowMap.type=THREE.
 const hemi=new THREE.HemisphereLight(0xddeaff,0x3d4851,PRESET.hemi);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,PRESET.sun);sun.position.set(9,15,7);sun.castShadow=true;sun.castShadow=QUALITY_CONFIG.shadows;sun.shadow.mapSize.set(QUALITY_CONFIG.shadowSize,QUALITY_CONFIG.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:PRESET.ground,roughness:.96}));floor.rotation.x=-Math.PI/2;floor.position.y=-.035;floor.receiveShadow=true;scene.add(floor);
-const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set();let player=null,score=0,last=0,ready=false,cameraFollow=null;
+const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);let player=null,score=0,last=0,ready=false,cameraFollow=null;
 const keyMap={KeyW:'w',ArrowUp:'w',KeyS:'s',ArrowDown:'s',KeyA:'a',ArrowLeft:'a',KeyD:'d',ArrowRight:'d',Space:'jump',KeyE:'interact',w:'w',s:'s',a:'a',d:'d',W:'w',S:'s',A:'a',D:'d',' ':'jump',e:'interact',E:'interact'};
 function has(o,type){return !!o.behaviors?.some(b=>b.type===type&&b.enabled!==false)}
 function mat(color,roughness=.72,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
@@ -1190,7 +1234,7 @@ async function loadObject(v){
   mixer=gltf.animations?.length?new THREE.AnimationMixer(imported):null;clips=gltf.animations||[];
  }else node=makePrimitive(v.kind);
  node.visible=v.visible!==false;node.position.set(v.x||0,v.y||0,v.z||0);if(v.scaleXYZ)node.scale.set(v.scaleXYZ.x??1,v.scaleXYZ.y??1,v.scaleXYZ.z??1);else node.scale.setScalar(v.scale||1);if(v.rotation)node.rotation.set(v.rotation.x||0,v.rotation.y||0,v.rotation.z||0);node.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}if(m.isDirectionalLight&&m.userData.zdeADLLight){m.intensity=v.adlIntensity??2.6;m.castShadow=QUALITY_CONFIG.shadows}});scene.add(node);
- const o={...v,node,mixer,clips,...interiorData,currentAction:null,runtime:{vy:0,velocity:0,onGround:true,jumpHeld:false,inside:false,insideInteriorId:null,returnPosition:null,returnRotation:null,interactHeld:false,opacity:1,pulseScale:1,drawRotation:0},solid:v.solid??(v.modelId?!!MODEL_ASSETS[v.modelId]?.solid:false)};o.behaviors=(v.behaviors||[]).map(b=>({...b,time:0,baseX:b.baseX??node.position.x,baseY:b.baseY??node.position.y,baseZ:b.baseZ??node.position.z,baseScaleX:b.baseScaleX??node.scale.x,baseScaleY:b.baseScaleY??node.scale.y,baseScaleZ:b.baseScaleZ??node.scale.z}));
+ const o={...v,node,mixer,clips,...interiorData,currentAction:null,runtime:{vy:0,velocity:0,onGround:true,jumpHeld:false,inside:false,insideInteriorId:null,returnPosition:null,returnRotation:null,interactHeld:false,opacity:1,pulseScale:1,drawRotation:0},solid:v.solid??(v.modelId?!!MODEL_ASSETS[v.modelId]?.solid:false)};o.behaviors=(v.behaviors||[]).map(b=>({...b,stepHeight:b.stepHeight??.72,groundSnap:b.groundSnap??1.15,maxSlopeAngle:b.maxSlopeAngle??(b.type==='physics'?58:52),time:0,baseX:b.baseX??node.position.x,baseY:b.baseY??node.position.y,baseZ:b.baseZ??node.position.z,baseScaleX:b.baseScaleX??node.scale.x,baseScaleY:b.baseScaleY??node.scale.y,baseScaleZ:b.baseScaleZ??node.scale.z}));
  if(mixer&&clips.length){const idle=clips.find(c=>/idle|stand|rest|breath/i.test(c.name));if(idle){o.currentAction=mixer.clipAction(idle);o.currentAction.play()}}
  if(has(o,'collectible')&&v.visible!==false)node.visible=true;objects.push(o);return o;
 }
@@ -1200,59 +1244,173 @@ function solidObject(o){return ['cube','house','tree','cylinder','platform','gro
 function overlap(a,b,pad=.018){return a.max.x>b.min.x+pad&&a.min.x<b.max.x-pad&&a.max.z>b.min.z+pad&&a.min.z<b.max.z-pad}
 function actorBox(o){const b=bounds(o);if(has(o,'controller')){const s=b.getSize(new THREE.Vector3()),sx=Math.min(s.x*.14,.14),sz=Math.min(s.z*.14,.14);b.min.x+=sx;b.max.x-=sx;b.min.z+=sz;b.max.z-=sz}return b}
 function overlapDepthXZ(a,b){const x=Math.max(0,Math.min(a.max.x,b.max.x)-Math.max(a.min.x,b.min.x)),z=Math.max(0,Math.min(a.max.z,b.max.z)-Math.max(a.min.z,b.min.z));return x>0&&z>0?Math.min(x,z):0}
-function blocked(o,x,z){const current=actorBox(o),ox=o.node.position.x,oz=o.node.position.z;o.node.position.x=x;o.node.position.z=z;const candidate=actorBox(o);o.node.position.x=ox;o.node.position.z=oz;const active=objects.find(q=>q.id===o.runtime.insideInteriorId),activeBox=active?bounds(active):null;
- for(const other of objects){if(other===o)continue;let boxes=[];if(other.category==='interior'){if(o.runtime.insideInteriorId!==other.id)continue;other.node.updateWorldMatrix(true,true);boxes=(other.interiorColliders||[]).map(b=>b.clone().applyMatrix4(other.node.matrixWorld))}else if(solidObject(other)){if(activeBox&&other.category==='building'){const ob=bounds(other);if(ob.max.x>activeBox.min.x&&ob.min.x<activeBox.max.x&&ob.max.z>activeBox.min.z&&ob.min.z<activeBox.max.z)continue}boxes=[bounds(other)]}
- for(const b of boxes){const vertical=candidate.min.y<b.max.y-.035&&candidate.max.y>b.min.y+.035;if(!vertical)continue;const next=overlapDepthXZ(candidate,b);if(next<=.018)continue;const previous=overlapDepthXZ(current,b);if(previous>.018&&next<previous-.001)continue;return true}}
+function groundSurfaceAt(o,x,z,referenceFoot,maxStepUp=.78,maxDrop=2.5){
+ const origin=new THREE.Vector3(x,referenceFoot+maxStepUp+.05,z);
+ groundRaycaster.set(origin,groundDown);groundRaycaster.near=0;groundRaycaster.far=maxStepUp+maxDrop+.05;
+ const meshes=[],owners=new Map();let best=null;
+ for(const q of objects){
+  if(q===o||q.node?.visible===false)continue;
+  if(q.id===o.runtime.insideInteriorId&&q.category==='interior'){
+   q.node.updateMatrixWorld(true);
+   for(const patch of q.interiorFloorBoxes||[]){
+    const box=patch.clone().applyMatrix4(q.node.matrixWorld);
+    if(x>=box.min.x&&x<=box.max.x&&z>=box.min.z&&z<=box.max.z&&box.max.y<=referenceFoot+maxStepUp+.05&&box.max.y>=referenceFoot-maxDrop){
+     const hit={height:box.max.y,normal:new THREE.Vector3(0,1,0),object:q,mesh:null};
+     if(!best||hit.height>best.height)best=hit;
+    }
+   }
+   continue;
+  }
+  if(!solidObject(q))continue;
+  const box=bounds(q);
+  if(x<box.min.x-.02||x>box.max.x+.02||z<box.min.z-.02||z>box.max.z+.02)continue;
+  q.node.traverse(n=>{
+   if(!n.isMesh||!n.geometry)return;
+   let p=n;while(p&&p!==q.node.parent){if(!p.visible)break;if(p===q.node)break;p=p.parent}
+   if(p===q.node){meshes.push(n);owners.set(n,q)}
+  });
+ }
+ if(meshes.length){
+  for(const hit of groundRaycaster.intersectObjects(meshes,false)){
+   if(!hit.face)continue;
+   const height=hit.point.y;
+   if(height>referenceFoot+maxStepUp+.05||height<referenceFoot-maxDrop)continue;
+   const normal=hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize();
+   const owner=owners.get(hit.object);
+   const actorLimit=o.behaviors?.find(b=>b.type==='controller'||b.type==='physics')?.maxSlopeAngle;
+   const maxSlope=actorLimit??owner?.behaviors?.find(b=>b.type==='physics'||b.type==='controller')?.maxSlopeAngle??58;
+   if(normal.y<Math.cos(THREE.MathUtils.degToRad(maxSlope)))continue;
+   if(!best||height>best.height)best={height,normal,object:owner,mesh:hit.object};
+  }
+ }
+ return best;
+}
+function blocked(o,x,z,ignoreObjects=[],candidateY=o.node.position.y){
+ const current=actorBox(o),oldPosition=o.node.position.clone();
+ o.node.position.set(x,candidateY,z);const candidate=actorBox(o);o.node.position.copy(oldPosition);
+ const active=objects.find(q=>q.id===o.runtime.insideInteriorId),activeBox=active?bounds(active):null;
+ for(const other of objects){
+  if(other===o||ignoreObjects.includes(other))continue;
+  let boxes=[];
+  if(other.category==='interior'){
+   if(o.runtime.insideInteriorId!==other.id)continue;
+   other.node.updateMatrixWorld(true);boxes=(other.interiorColliders||[]).map(b=>b.clone().applyMatrix4(other.node.matrixWorld));
+  }else if(solidObject(other)){
+   if(activeBox&&other.category==='building'){
+    const ob=bounds(other);
+    if(ob.max.x>activeBox.min.x&&ob.min.x<activeBox.max.x&&ob.max.z>activeBox.min.z&&ob.min.z<activeBox.max.z)continue;
+   }
+   boxes=[bounds(other)];
+  }
+  for(const b of boxes){
+   const vertical=candidate.min.y<b.max.y-.035&&candidate.max.y>b.min.y+.035;
+   if(!vertical)continue;
+   const next=overlapDepthXZ(candidate,b);if(next<=.018)continue;
+   const previous=overlapDepthXZ(current,b);if(previous>.018&&next<previous-.001)continue;
+   return true;
+  }
+ }
  return false;
 }
-function groundTop(o,x,z,oldY,newY){let top=0;for(const q of objects){if(q===o)continue;let patches=[];if(q.kind==='ground'||q.kind==='platform'||q.category==='platform')patches=[bounds(q)];else if(q.id===o.runtime.insideInteriorId){q.node.updateWorldMatrix(true,true);patches=(q.interiorFloorBoxes||[]).map(b=>b.clone().applyMatrix4(q.node.matrixWorld))}for(const b of patches){const test=bounds(o),shift=newY-o.node.position.y;test.min.y+=shift;test.max.y+=shift;if(test.max.x>b.min.x&&test.min.x<b.max.x&&test.max.z>b.min.z&&test.min.z<b.max.z&&oldY>=b.max.y-.16&&newY<=b.max.y+.05)top=Math.max(top,b.max.y)}}return top}
+function moveOnGroundSurface(o,dx,dz){
+ const nextX=o.node.position.x+dx,nextZ=o.node.position.z+dz,r=o.runtime;
+ const controller=o.behaviors.find(b=>b.type==='controller'&&b.enabled!==false);
+ const driving=o.behaviors.find(b=>b.type==='driving'&&b.enabled!==false);
+ const stepHeight=controller?.stepHeight??driving?.stepHeight??.72,groundSnap=controller?.groundSnap??1.15;
+ const maxSlope=THREE.MathUtils.degToRad(controller?.maxSlopeAngle??driving?.maxSlopeAngle??52),foot=bounds(o).min.y;
+ let nextY=o.node.position.y,ignore=[],followed=false;
+ if(r.onGround&&r.vy<=.05){
+  let hit=groundSurfaceAt(o,nextX,nextZ,foot,stepHeight,groundSnap);
+  if(!r.insideInteriorId&&(!hit||hit.height<0)&&foot>=-groundSnap&&foot<=stepHeight){
+   if(!hit||hit.height<0)hit={height:0,normal:new THREE.Vector3(0,1,0),object:null};
+  }
+  if(hit&&hit.normal.y>=Math.cos(maxSlope)){
+   const rise=hit.height-foot;
+   if(rise<=stepHeight&&rise>=-groundSnap){nextY+=rise;if(hit.object)ignore.push(hit.object);followed=true}
+  }
+ }
+ if(blocked(o,nextX,nextZ,ignore,nextY))return false;
+ o.node.position.set(nextX,nextY,nextZ);
+ if(followed){r.vy=0;r.onGround=true}
+ return true;
+}
+function groundTop(o,x,z,oldY,newY){
+ const offset=bounds(o).min.y-o.node.position.y,oldFoot=oldY+offset,newFoot=newY+offset;
+ let top=o.runtime.insideInteriorId?-Infinity:0;
+ const hit=groundSurfaceAt(o,x,z,oldFoot,.28,Math.max(2.5,oldFoot-newFoot+.5));
+ if(hit&&oldFoot>=hit.height-.18&&newFoot<=hit.height+.08)top=Math.max(top,hit.height);
+ if(o.runtime.insideInteriorId){
+  const interior=objects.find(q=>q.id===o.runtime.insideInteriorId);
+  if(interior){
+   interior.node.updateMatrixWorld(true);
+   for(const patch of interior.interiorFloorBoxes||[]){
+    const box=patch.clone().applyMatrix4(interior.node.matrixWorld);
+    if(x>=box.min.x&&x<=box.max.x&&z>=box.min.z&&z<=box.max.z&&oldFoot>=box.max.y-.18&&newFoot<=box.max.y+.08)top=Math.max(top,box.max.y);
+   }
+  }
+ }
+ return top;
+}
 function enterInterior(o,near){const r=o.runtime,foot=bounds(o).min.y-o.node.position.y,patches=(near.interiorFloorBoxes||[]).slice().sort((a,b)=>{const A=a.getSize(new THREE.Vector3()),B=b.getSize(new THREE.Vector3());return B.x*B.z-A.x*A.z}),candidates=[];for(const b of patches.slice(0,10)){const c=b.getCenter(new THREE.Vector3());candidates.push(c.clone());for(const d of [.18,.36,.54])candidates.push(c.clone().add(new THREE.Vector3(d,0,0)),c.clone().add(new THREE.Vector3(-d,0,0)),c.clone().add(new THREE.Vector3(0,0,d)),c.clone().add(new THREE.Vector3(0,0,-d)))}if(!candidates.length)candidates.push(near.interiorEntryPoint?.clone()||new THREE.Vector3(0,near.interiorFloorY??0,0));r.insideInteriorId=near.id;r.inside=true;for(const p of candidates){const w=near.node.localToWorld(p.clone());o.node.position.set(w.x,w.y-foot+.035,w.z);if(!blocked(o,o.node.position.x,o.node.position.z)){r.vy=0;r.onGround=true;return true}}r.inside=false;r.insideInteriorId=null;return false}
 function updateInterior(o){const r=o.runtime,all=objects.filter(q=>has(q,'interior'));let near=null,dist=Infinity;if(r.inside&&r.insideInteriorId)near=all.find(q=>q.id===r.insideInteriorId)||null;else for(const q of all){const ep=q.category==='interior'?(q.interiorEntryPoint?.clone()||new THREE.Vector3(0,q.interiorFloorY??0,0)):new THREE.Vector3(),entry=q.category==='interior'?q.node.localToWorld(ep):q.node.position.clone();const d=Math.hypot(o.node.position.x-entry.x,o.node.position.z-entry.z),behavior=q.behaviors.find(b=>b.type==='interior'),radius=behavior?.enterRadius??3.8;if(d<radius&&d<dist){near=q;dist=d}}hint.style.display=near?'block':'none';hint.textContent=r.inside?'E  ·  Exit house':'E  ·  Enter house';const touchEnter=document.getElementById('touchEnter');if(touchEnter)touchEnter.textContent=r.inside?'EXIT':'ENTER';const pressed=keys.interact||touchKeys.has('interact');if(!pressed||r.interactHeld)return;r.interactHeld=true;if(r.inside){if(r.returnPosition)o.node.position.copy(r.returnPosition);if(r.returnRotation)o.node.rotation.copy(r.returnRotation);r.inside=false;r.insideInteriorId=null;r.returnPosition=null;r.returnRotation=null;r.vy=0;r.onGround=true;return}if(!near)return;r.returnPosition=o.node.position.clone();r.returnRotation=o.node.rotation.clone();if(near.category==='interior'&&near.interiorColliders.length&&near.interiorFloorBoxes.length){if(!enterInterior(o,near)){r.returnPosition=null;r.returnRotation=null;return}}else{const box=bounds(near),direction=new THREE.Vector3(o.node.position.x-near.node.position.x,0,o.node.position.z-near.node.position.z);if(direction.length()<.001)direction.set(1,0,0);direction.normalize();const size=box.getSize(new THREE.Vector3()),offset=Math.max(size.x,size.z)*.5+.8;o.node.position.set(near.node.position.x+direction.x*offset,o.node.position.y,near.node.position.z+direction.z*offset);r.inside=true;r.insideInteriorId=null;r.vy=0;r.onGround=true}}
 
 function moveActor(o,dt){
- const r=o.runtime,b=o.behaviors.find(x=>x.type==='controller'),speed=b?.speed??5.8;
+ const r=o.runtime,b=o.behaviors.find(x=>x.type==='controller'&&x.enabled!==false),speed=b?.speed??5.8;
  let dx=(keys.d||touchKeys.has('d')?1:0)-(keys.a||touchKeys.has('a')?1:0);
  let dz=(keys.s||touchKeys.has('s')?1:0)-(keys.w||touchKeys.has('w')?1:0);
  if(dx||dz){
   const n=Math.hypot(dx,dz);dx=dx/n*speed*dt;dz=dz/n*speed*dt;
-  if(dx&&!blocked(o,o.node.position.x+dx,o.node.position.z))o.node.position.x+=dx;
-  if(dz&&!blocked(o,o.node.position.x,o.node.position.z+dz))o.node.position.z+=dz;
+  if(dx)moveOnGroundSurface(o,dx,0);if(dz)moveOnGroundSurface(o,0,dz);
   o.node.rotation.y=Math.atan2(dx,dz);setAnimation(o,'walk');
  }else setAnimation(o,'idle');
  const jump=keys.jump||touchKeys.has('jump');
  if(jump&&!r.jumpHeld&&r.onGround){r.vy=b?.jump??7.2;r.onGround=false;setAnimation(o,'jump')}
  r.jumpHeld=jump;
- const before=bounds(o),oldY=o.node.position.y,foot=before.min.y,gravity=b?.gravity??18;
- r.vy-=gravity*dt;
- const nextY=oldY+r.vy*dt,nextFoot=foot+(nextY-oldY);
- let landing=-Infinity;
- const crossingTolerance=Math.max(.18,Math.abs(r.vy*dt)+.06);
+ const before=bounds(o),foot=before.min.y,oldY=o.node.position.y,gravity=b?.gravity??18;
+ r.vy-=gravity*dt;const nextY=oldY+r.vy*dt,nextFoot=foot+(nextY-oldY);
+ const crossingTolerance=Math.max(.18,Math.abs(r.vy*dt)+.06);let landing=-Infinity;
  if(!r.insideInteriorId&&foot>=-crossingTolerance&&nextFoot<=.06)landing=0;
  if(r.vy<=0){
-  for(const q of objects){
-   if(q===o)continue;
-   let boxes=[];
-   if(q.kind==='ground'||q.kind==='platform'||q.category==='platform')boxes=[bounds(q)];
-   else if(q.id===r.insideInteriorId){
-    q.node.updateWorldMatrix(true,true);
-    boxes=(q.interiorFloorBoxes||[]).map(box=>box.clone().applyMatrix4(q.node.matrixWorld));
-   }
-   for(const box of boxes){
-    const overlapsXZ=before.max.x>box.min.x&&before.min.x<box.max.x&&before.max.z>box.min.z&&before.min.z<box.max.z;
-    const crossedTop=foot>=box.max.y-crossingTolerance&&nextFoot<=box.max.y+.06;
-    if(overlapsXZ&&crossedTop)landing=Math.max(landing,box.max.y);
+  const hit=groundSurfaceAt(o,o.node.position.x,o.node.position.z,foot,.25,Math.max(2.5,foot-nextFoot+.5));
+  if(hit&&foot>=hit.height-crossingTolerance&&nextFoot<=hit.height+.06)landing=Math.max(landing,hit.height);
+  if(r.insideInteriorId){
+   const interior=objects.find(q=>q.id===r.insideInteriorId);
+   if(interior){
+    interior.node.updateMatrixWorld(true);
+    for(const patch of interior.interiorFloorBoxes||[]){
+     const box=patch.clone().applyMatrix4(interior.node.matrixWorld);
+     if(o.node.position.x>=box.min.x&&o.node.position.x<=box.max.x&&o.node.position.z>=box.min.z&&o.node.position.z<=box.max.z&&foot>=box.max.y-crossingTolerance&&nextFoot<=box.max.y+.06)landing=Math.max(landing,box.max.y);
+    }
    }
   }
  }
- if(r.vy<=0&&Number.isFinite(landing)){
-  o.node.position.y+=landing-foot;r.vy=0;r.onGround=true;
- }else{
-  o.node.position.y=nextY;r.onGround=false;
- }
+ if(r.vy<=0&&Number.isFinite(landing)){o.node.position.y+=landing-foot;r.vy=0;r.onGround=true}
+ else{o.node.position.y=nextY;r.onGround=false}
 }
-
-function drive(o,dt){const b=o.behaviors.find(x=>x.type==='driving'),r=o.runtime;const f=keys.w||touchKeys.has('w'),rev=keys.s||touchKeys.has('s'),left=keys.a||touchKeys.has('a'),right=keys.d||touchKeys.has('d');const max=b?.maxSpeed??15,acc=b?.acceleration??9,brake=b?.brake??15,steer=b?.steering??2.1;if(f)r.velocity=Math.min(max,r.velocity+acc*dt);else if(rev)r.velocity=Math.max(-max*.42,r.velocity-acc*dt);else r.velocity+=(r.velocity>0?-1:1)*Math.min(Math.abs(r.velocity),brake*.32*dt);if(keys.jump||touchKeys.has('jump'))r.velocity*=Math.max(0,1-brake*dt);const st=(left?1:0)-(right?1:0);if(Math.abs(r.velocity)>.12&&st)o.node.rotation.y+=st*steer*dt*Math.sign(r.velocity)*Math.min(1,Math.abs(r.velocity)/3);const yaw=o.node.rotation.y,dx=-Math.sin(yaw)*r.velocity*dt,dz=-Math.cos(yaw)*r.velocity*dt;if(dx&&!blocked(o,o.node.position.x+dx,o.node.position.z))o.node.position.x+=dx;else if(dx)r.velocity*=.2;if(dz&&!blocked(o,o.node.position.x,o.node.position.z+dz))o.node.position.z+=dz;else if(dz)r.velocity*=.2;}
-function updatePhysicsObject(o,dt){if(!has(o,'physics')||has(o,'float')||has(o,'bounce'))return;const r=o.runtime,gravity=o.behaviors.find(b=>b.type==='physics')?.gravity??18,old=o.node.position.y;r.vy-=gravity*dt;const next=old+r.vy*dt,support=groundTop(o,o.node.position.x,o.node.position.z,old,next);if(r.vy<=0&&next<=support){o.node.position.y=support;r.vy=0;r.onGround=true}else{o.node.position.y=next;r.onGround=false}}
+function drive(o,dt){
+ const b=o.behaviors.find(x=>x.type==='driving'),r=o.runtime;
+ const f=keys.w||touchKeys.has('w'),rev=keys.s||touchKeys.has('s'),left=keys.a||touchKeys.has('a'),right=keys.d||touchKeys.has('d');
+ const max=b?.maxSpeed??15,acc=b?.acceleration??9,brake=b?.brake??15,steer=b?.steering??2.1;
+ if(f)r.velocity=Math.min(max,r.velocity+acc*dt);
+ else if(rev)r.velocity=Math.max(-max*.42,r.velocity-acc*dt);
+ else r.velocity+=(r.velocity>0?-1:1)*Math.min(Math.abs(r.velocity),brake*.32*dt);
+ if(keys.jump||touchKeys.has('jump'))r.velocity*=Math.max(0,1-brake*dt);
+ const st=(left?1:0)-(right?1:0);
+ if(Math.abs(r.velocity)>.12&&st)o.node.rotation.y+=st*steer*dt*Math.sign(r.velocity)*Math.min(1,Math.abs(r.velocity)/3);
+ const yaw=o.node.rotation.y,dx=-Math.sin(yaw)*r.velocity*dt,dz=-Math.cos(yaw)*r.velocity*dt;
+ if(dx&&!moveOnGroundSurface(o,dx,0))r.velocity*=.2;
+ if(dz&&!moveOnGroundSurface(o,0,dz))r.velocity*=.2;
+}
+function updatePhysicsObject(o,dt){
+ if(!has(o,'physics')||has(o,'float')||has(o,'bounce'))return;
+ const r=o.runtime,behavior=o.behaviors.find(b=>b.type==='physics'&&b.enabled!==false),gravity=behavior?.gravity??18,old=o.node.position.y;
+ r.vy-=gravity*dt;
+ const next=old+r.vy*dt,support=groundTop(o,o.node.position.x,o.node.position.z,old,next);
+ const footOffset=bounds(o).min.y-o.node.position.y;
+ if(r.vy<=0&&Number.isFinite(support)&&next+footOffset<=support){
+  o.node.position.y+=support-(old+footOffset);r.vy=0;r.onGround=true;
+ }else{o.node.position.y=next;r.onGround=false}
+}
 function setOpacity(o,opacity){const alpha=THREE.MathUtils.clamp(opacity,0,1);o.node.traverse(n=>{if(!n.isMesh||!n.material)return;for(const m of(Array.isArray(n.material)?n.material:[n.material])){if(!m.userData)m.userData={};if(m.userData.zdeBaseOpacity===undefined){m.userData.zdeBaseOpacity=m.opacity??1;m.userData.zdeBaseTransparent=!!m.transparent;m.userData.zdeBaseDepthWrite=m.depthWrite!==false}m.opacity=m.userData.zdeBaseOpacity*alpha;m.transparent=alpha<.999||m.userData.zdeBaseTransparent;m.depthWrite=alpha<.999?false:m.userData.zdeBaseDepthWrite;m.needsUpdate=true}})}
 function updateBehavior(o,b,dt,target){const n=o.node,p=n.position,r=o.runtime,speed=b.speed??2.2,axis=b.axis==='z'?'z':'x';b.time=(b.time||0)+dt;if(b.type==='rotate')n.rotation.y+=dt*1.8;else if(b.type==='spin'){n.rotation.x+=dt*speed*.55;n.rotation.y+=dt*speed;n.rotation.z+=dt*speed*.3}else if(b.type==='float')p.y=(b.baseY??p.y)+Math.sin(b.time*1.5)*.65;else if(b.type==='bounce')p.y=(b.baseY??p.y)+Math.abs(Math.sin(b.time*2.5))*.8;else if(b.type==='move')p[axis]=(b['base'+axis.toUpperCase()]??p[axis])+Math.sin(b.time*speed)*(b.distance??3);else if(b.type==='patrol'){const phase=(b.time*speed/Math.max(.1,b.distance??3))%4,travel=b.distance??3,wave=phase<1?phase:phase<3?2-phase:phase-4;p[axis]=(b['base'+axis.toUpperCase()]??p[axis])+wave*travel}else if(b.type==='orbit'){const a=b.time*speed,rad=b.radius??2.5;p.x=(b.baseX??p.x)+Math.cos(a)*rad;p.z=(b.baseZ??p.z)+Math.sin(a)*rad}else if(b.type==='pulse'){const f=1+Math.sin(b.time*speed)*(b.amount??.18);n.scale.set((b.baseScaleX??n.scale.x)*f,(b.baseScaleY??n.scale.y)*f,(b.baseScaleZ??n.scale.z)*f)}else if(b.type==='fade'){const min=THREE.MathUtils.clamp(b.minimumOpacity??.22,.05,1);r.opacity=min+(1-min)*(.5+.5*Math.sin(b.time*speed));setOpacity(o,r.opacity)}else if(b.type==='colorCycle'){const h=(b.time*.12)%1;n.traverse(c=>{if(!c.isMesh||!c.material)return;for(const m of(Array.isArray(c.material)?c.material:[c.material]))if(m.color){if(!m.userData)m.userData={};if(!m.userData.zdeBaseColor)m.userData.zdeBaseColor=m.color.clone();m.color.setHSL(h,.72,.56)}})}else if((b.type==='follow'||b.type==='enemyAI'||b.type==='flee'||b.type==='magnet')&&target&&target!==o){const dx=target.node.position.x-p.x,dz=target.node.position.z-p.z,d=Math.hypot(dx,dz),range=b.radius??5;if(d>.001&&(b.type!=='magnet'||d<range)){const sign=b.type==='flee'?-1:1,step=Math.min(d,dt*speed*sign);p.x+=dx/d*step;p.z+=dz/d*step;if(b.type!=='flee')n.rotation.y=Math.atan2(dx,dz)}}else if(b.type==='face'&&target&&target!==o){const dx=target.node.position.x-p.x,dz=target.node.position.z-p.z;if(Math.hypot(dx,dz)>.001){const a=Math.atan2(dx,dz);n.rotation.y+=THREE.MathUtils.clamp(a-n.rotation.y,-speed*dt,speed*dt)}}else if(b.type==='wander'){b.wanderTimer=(b.wanderTimer??0)-dt;if(b.wanderTimer<=0){b.wanderAngle=Math.random()*Math.PI*2;b.wanderTimer=1.5+Math.random()*2.5}const d=b.distance??3,tx=(b.baseX??p.x)+Math.cos(b.wanderAngle)*d,tz=(b.baseZ??p.z)+Math.sin(b.wanderAngle)*d,dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz);if(l>.08){p.x+=dx/l*speed*dt;p.z+=dz/l*speed*dt;n.rotation.y=Math.atan2(dx,dz)}}}
 const aatRuntimeCache=new WeakMap();
@@ -1286,7 +1444,7 @@ for(const btn of document.querySelectorAll('[data-key]')){const k=btn.dataset.ke
  const projectEscaped=safeProject,defsEscaped=safeDefs;
  return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px;pointer-events:auto}.pad button,.action button{border:1px solid #ffffff77;border-radius:12px;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border-radius:50%}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
 }
-function serialize(){return{engine:'Zero Down Engine',version:'1.3.1',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
+function serialize(){return{engine:'Zero Down Engine',version:'1.3.2',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
 async function serializeProjectForSave(){
  const project=serialize(),assetData=new Map();
  for(const item of project.objects){
