@@ -720,7 +720,9 @@ function probeGroundSurface(obj,x,z,referenceFoot,maxStepUp=.78,maxDrop=2.35){
 }
 function supportSurfaces(obj,bounds){
  const surfaces=[{top:0,box:null,object:null,normal:new THREE.Vector3(0,1,0)}];
- const ground=probeGroundSurface(obj,obj.node.position.x,obj.node.position.z,bounds.min.y,.82,2.45);
+ const bodySize=bounds.getSize(new THREE.Vector3());
+ const probeUp=Math.min(1.25,Math.max(.82,bodySize.y*.65));
+ const ground=probeGroundSurface(obj,obj.node.position.x,obj.node.position.z,bounds.min.y,probeUp,2.45);
  if(ground)surfaces.push({top:ground.height,box:null,object:ground.object,normal:ground.normal,mesh:ground.mesh});
  for(const interior of state.objects){
   if(interior.id!==obj.runtime?.insideInteriorId)continue;
@@ -747,8 +749,14 @@ function applyVerticalPhysics(obj,dt){
  const gravity=controller?.gravity??physics?.gravity??18;
  const surfaces=supportSurfaces(obj,boundsBefore);
  if(r.vy<=0){
-  const standing=surfaces.find(item=>Math.abs(previousFoot-item.top)<=.11);
-  if(standing){obj.node.position.y+=standing.top-previousFoot;r.vy=0;r.onGround=true;return}
+  const bodyHeight=boundsBefore.max.y-boundsBefore.min.y;
+  const penetrationLimit=Math.min(1,bodyHeight*.6);
+  const support=surfaces.find(item=>{
+   const penetration=item.top-previousFoot;
+   const embedded=penetration>.11&&penetration<=penetrationLimit&&boundsBefore.max.y>item.top+.02;
+   return Math.abs(penetration)<=.11||embedded;
+  });
+  if(support){obj.node.position.y+=support.top-previousFoot;r.vy=0;r.onGround=true;return}
  }
  r.vy-=gravity*dt;obj.node.position.y+=r.vy*dt;
  const boundsAfter=worldBounds(obj),currentFoot=boundsAfter.min.y;
@@ -1335,10 +1343,15 @@ function moveOnGroundSurface(o,dx,dz){
  return true;
 }
 function groundTop(o,x,z,oldY,newY){
- const offset=bounds(o).min.y-o.node.position.y,oldFoot=oldY+offset,newFoot=newY+offset;
+ const objectBox=bounds(o),offset=objectBox.min.y-o.node.position.y,oldFoot=oldY+offset,newFoot=newY+offset;
+ const bodyHeight=objectBox.max.y-objectBox.min.y,penetrationLimit=Math.min(1,bodyHeight*.6);
  let top=o.runtime.insideInteriorId?-Infinity:0;
- const hit=groundSurfaceAt(o,x,z,oldFoot,.28,Math.max(2.5,oldFoot-newFoot+.5));
- if(hit&&oldFoot>=hit.height-.18&&newFoot<=hit.height+.08)top=Math.max(top,hit.height);
+ const probeUp=Math.min(1.25,Math.max(.28,bodyHeight*.65));
+ const hit=groundSurfaceAt(o,x,z,oldFoot,probeUp,Math.max(2.5,oldFoot-newFoot+.5));
+ if(hit){
+  const embedded=oldFoot<hit.height&&objectBox.max.y>hit.height+.02&&hit.height-oldFoot<=penetrationLimit;
+  if((oldFoot>=hit.height-.18||embedded)&&newFoot<=hit.height+.08)top=Math.max(top,hit.height);
+ }
  if(o.runtime.insideInteriorId){
   const interior=objects.find(q=>q.id===o.runtime.insideInteriorId);
   if(interior){
@@ -1366,13 +1379,17 @@ function moveActor(o,dt){
  const jump=keys.jump||touchKeys.has('jump');
  if(jump&&!r.jumpHeld&&r.onGround){r.vy=b?.jump??7.2;r.onGround=false;setAnimation(o,'jump')}
  r.jumpHeld=jump;
- const before=bounds(o),foot=before.min.y,oldY=o.node.position.y,gravity=b?.gravity??18;
+ const before=bounds(o),foot=before.min.y,oldY=o.node.position.y,bodyHeight=before.max.y-before.min.y,gravity=b?.gravity??18;
  r.vy-=gravity*dt;const nextY=oldY+r.vy*dt,nextFoot=foot+(nextY-oldY);
- const crossingTolerance=Math.max(.18,Math.abs(r.vy*dt)+.06);let landing=-Infinity;
- if(!r.insideInteriorId&&foot>=-crossingTolerance&&nextFoot<=.06)landing=0;
+ const crossingTolerance=Math.max(.18,Math.abs(r.vy*dt)+.06),penetrationLimit=Math.min(1,bodyHeight*.6);let landing=-Infinity;
+ if(!r.insideInteriorId&&nextFoot<=.06&&foot+bodyHeight>0&&foot>=-penetrationLimit)landing=0;
  if(r.vy<=0){
-  const hit=groundSurfaceAt(o,o.node.position.x,o.node.position.z,foot,.25,Math.max(2.5,foot-nextFoot+.5));
-  if(hit&&foot>=hit.height-crossingTolerance&&nextFoot<=hit.height+.06)landing=Math.max(landing,hit.height);
+  const probeUp=Math.min(1.25,Math.max(.25,bodyHeight*.65));
+  const hit=groundSurfaceAt(o,o.node.position.x,o.node.position.z,foot,probeUp,Math.max(2.5,foot-nextFoot+.5));
+  if(hit){
+   const embedded=foot<hit.height&&before.max.y>hit.height+.02&&hit.height-foot<=penetrationLimit;
+   if((foot>=hit.height-crossingTolerance||embedded)&&nextFoot<=hit.height+.06)landing=Math.max(landing,hit.height);
+  }
   if(r.insideInteriorId){
    const interior=objects.find(q=>q.id===r.insideInteriorId);
    if(interior){
