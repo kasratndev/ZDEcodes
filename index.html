@@ -815,7 +815,7 @@ function moveOnGroundSurface(obj,dx,dz){
   }
   if(hit&&hit.normal.y>=Math.cos(maxSlope)){
    const rise=hit.height-foot;
-   if(rise<=stepHeight&&rise>=-groundSnap){nextY+=rise;if(hit.object)ignore.push(hit.object);followed=true}
+   if(rise<=stepHeight&&rise>=-groundSnap){nextY+=rise;if(hit.object&&hit.object.category!=='interior')ignore.push(hit.object);followed=true}
   }
  }
  if(collidesAt(obj,nx,nz,ignore,nextY))return false;
@@ -1326,7 +1326,7 @@ function moveOnGroundSurface(o,dx,dz){
   }
   if(hit&&hit.normal.y>=Math.cos(maxSlope)){
    const rise=hit.height-foot;
-   if(rise<=stepHeight&&rise>=-groundSnap){nextY+=rise;if(hit.object)ignore.push(hit.object);followed=true}
+   if(rise<=stepHeight&&rise>=-groundSnap){nextY+=rise;if(hit.object&&hit.object.category!=='interior')ignore.push(hit.object);followed=true}
   }
  }
  if(blocked(o,nextX,nextZ,ignore,nextY))return false;
