@@ -954,7 +954,7 @@ function updateGame(dt){
    let dx=inputX,dz=-inputForward;
    const activeCamera=cameraBehavior(player);
    if(activeCamera){const fx=-Math.sin(playCameraYaw),fz=-Math.cos(playCameraYaw),rx=Math.cos(playCameraYaw),rz=-Math.sin(playCameraYaw);dx=rx*inputX+fx*inputForward;dz=rz*inputX+fz*inputForward}
-   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
+   if(dx||dz){const length=Math.max(1,Math.hypot(dx,dz));dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);if(!activeCamera||activeCamera.type!=='cameraFirst')player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
    const jumpDown=key.space||touch.has('space');if(jumpDown&&!player.runtime.jumpHeld&&player.runtime.onGround){player.runtime.vy=controller?.jump??7.2;player.runtime.onGround=false;setModelAnimation(player,'jump')}player.runtime.jumpHeld=jumpDown;updateInteriorInteraction(player);
   }
   for(const obj of [...state.objects]){if(obj===player)continue;if(hasBehavior(obj,'collectible')&&obj.node.visible&&obj.node.position.distanceTo(player.node.position)<1.25*(player.node.scale.x||1)){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}
