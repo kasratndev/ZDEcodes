@@ -963,7 +963,7 @@ function updateGame(dt){
  if(followObject?.node){
   const mode=cameraBehavior(followObject),target=followObject.node.position,inside=!!player?.runtime?.inside;
   if(mode){
-   const first=mode.type==='cameraFirst',focus=new THREE.Vector3(target.x,target.y+(followObject.runtime.cameraEyeOffset??1.58),target.z);
+   const first=mode.type==='cameraFirst',focus=new THREE.Vector3(target.x,target.y+(first?(followObject.runtime.cameraEyeOffset??1.58):1.28),target.z);
    const direction=new THREE.Vector3(-Math.sin(playCameraYaw)*Math.cos(playCameraPitch),Math.sin(playCameraPitch),-Math.cos(playCameraYaw)*Math.cos(playCameraPitch));
    const eyeForward=new THREE.Vector3(-Math.sin(playCameraYaw),0,-Math.cos(playCameraYaw));
    const firstPosition=focus.clone().addScaledVector(eyeForward,followObject.runtime.cameraForwardOffset??.78);
@@ -1635,7 +1635,7 @@ function animate(t){
   if(cameraTarget?.node){
    const follow=cameraTarget.node.position,mode=cameraMode(cameraTarget);
    if(mode){
-    const first=mode==='cameraFirst',focus=new THREE.Vector3(follow.x,follow.y+(cameraTarget.runtime.cameraEyeOffset??(first?1.58:1.28)),follow.z);
+    const first=mode==='cameraFirst',focus=new THREE.Vector3(follow.x,follow.y+(first?(cameraTarget.runtime.cameraEyeOffset??1.58):1.28),follow.z);
     const direction=new THREE.Vector3(-Math.sin(cameraYaw)*Math.cos(cameraPitch),Math.sin(cameraPitch),-Math.cos(cameraYaw)*Math.cos(cameraPitch));
     const eyeForward=new THREE.Vector3(-Math.sin(cameraYaw),0,-Math.cos(cameraYaw));
     const firstPosition=focus.clone().addScaledVector(eyeForward,cameraTarget.runtime.cameraForwardOffset??.78);
