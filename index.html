@@ -316,7 +316,7 @@ function init3D(){
   const dt=Math.min((t-lastFrame)/1000||0,.05);lastFrame=t;
   if(state.importing)return;
   if(state.playing){updateGame(dt);if(state.mode==='2d')draw2D()}
-  updateModelMixers(dt);controls.update();updateAATVisibility();renderer.render(scene,camera);
+  updateModelMixers(dt);if(!state.playing)controls.update();updateAATVisibility();renderer.render(scene,camera);
   perfFrames++;
   if(t-perfLast>600){const fps=Math.round(perfFrames*1000/(t-perfLast));$('editorFps').textContent=fps+' FPS · '+state.objects.length+' objects';perfFrames=0;perfLast=t;if(state.quality==='performance'){if(fps<30)adaptiveEditorPixel=Math.max(.55,adaptiveEditorPixel-.05);else if(fps>54)adaptiveEditorPixel=Math.min(.78,adaptiveEditorPixel+.02);const desired=Math.min(devicePixelRatio||1,adaptiveEditorPixel);if(Math.abs(renderer.getPixelRatio()-desired)>.025)renderer.setPixelRatio(desired)}}
  });
