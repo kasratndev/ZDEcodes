@@ -963,9 +963,15 @@ function updateGame(dt){
  if(followObject?.node){
   const mode=cameraBehavior(followObject),target=followObject.node.position,inside=!!player?.runtime?.inside;
   if(mode){
-   const first=mode.type==='cameraFirst',focus=new THREE.Vector3(target.x,target.y+(first?1.58:1.28),target.z);
+   const first=mode.type==='cameraFirst';
+   followObject.node.updateWorldMatrix(true,true);
+   const actorBounds=new THREE.Box3().setFromObject(followObject.node),actorHeight=Math.max(.5,actorBounds.max.y-actorBounds.min.y);
+   const eyeY=actorBounds.min.y+actorHeight*.9;
+   const focus=new THREE.Vector3(target.x,eyeY,target.z);
    const direction=new THREE.Vector3(-Math.sin(playCameraYaw)*Math.cos(playCameraPitch),Math.sin(playCameraPitch),-Math.cos(playCameraYaw)*Math.cos(playCameraPitch));
-   const desired=first?focus.clone():new THREE.Vector3(target.x+Math.sin(playCameraYaw)*5.2,target.y+2.65-Math.sin(playCameraPitch)*5.2,target.z+Math.cos(playCameraYaw)*5.2);
+   const eyeForward=new THREE.Vector3(-Math.sin(playCameraYaw),0,-Math.cos(playCameraYaw));
+   const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.38,Math.min(.58,actorHeight*.25)));
+   const desired=first?firstPersonPosition:new THREE.Vector3(target.x+Math.sin(playCameraYaw)*5.2,target.y+2.65-Math.sin(playCameraPitch)*5.2,target.z+Math.cos(playCameraYaw)*5.2);
    camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));controls.target.copy(focus);
   }else{
    const desired=inside?new THREE.Vector3(target.x+2.15,target.y+1.9,target.z+2.55):new THREE.Vector3(target.x+5,target.y+4.3,target.z+7),lookAt=new THREE.Vector3(target.x,target.y+1,target.z);
@@ -1622,9 +1628,14 @@ function animate(t){
   if(cameraTarget?.node){
    const follow=cameraTarget.node.position,mode=cameraMode(cameraTarget);
    if(mode){
-    const first=mode==='cameraFirst',focus=new THREE.Vector3(follow.x,follow.y+(first?1.58:1.28),follow.z);
+    const first=mode==='cameraFirst';
+    const actorBounds=bounds(cameraTarget),actorHeight=Math.max(.5,actorBounds.max.y-actorBounds.min.y);
+    const eyeY=actorBounds.min.y+actorHeight*.9;
+    const focus=new THREE.Vector3(follow.x,eyeY,follow.z);
     const direction=new THREE.Vector3(-Math.sin(cameraYaw)*Math.cos(cameraPitch),Math.sin(cameraPitch),-Math.cos(cameraYaw)*Math.cos(cameraPitch));
-    const desired=first?focus.clone():new THREE.Vector3(follow.x+Math.sin(cameraYaw)*5.2,follow.y+2.65-Math.sin(cameraPitch)*5.2,follow.z+Math.cos(cameraYaw)*5.2);
+    const eyeForward=new THREE.Vector3(-Math.sin(cameraYaw),0,-Math.cos(cameraYaw));
+    const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.38,Math.min(.58,actorHeight*.25)));
+    const desired=first?firstPersonPosition:new THREE.Vector3(follow.x+Math.sin(cameraYaw)*5.2,follow.y+2.65-Math.sin(cameraPitch)*5.2,follow.z+Math.cos(cameraYaw)*5.2);
     camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));
    }else{
     const look=new THREE.Vector3(follow.x,follow.y+1,follow.z),desired=new THREE.Vector3(follow.x+5,follow.y+4.2,follow.z+7);
