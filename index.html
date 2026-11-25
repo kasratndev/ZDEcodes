@@ -10,7 +10,7 @@
 .app{height:100%;display:grid;grid-template-rows:49px 39px minmax(0,1fr) 24px}.topbar,.toolbar,.status{display:flex;align-items:center;gap:8px;padding:0 11px;background:#0e141e;border-bottom:1px solid var(--line)}.brand{font-weight:900;font-size:14px;letter-spacing:.3px}.brand b{color:var(--cyan)}.version{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:3px 6px}.actions{margin-left:auto;display:flex;gap:6px}.play{background:#12695e;border-color:#1a9987;font-weight:800}.play.running{background:#87384b;border-color:#c45a70}.toolbar{background:#121b28}.toolbar .active{background:#294365;border-color:#4d78aa}.toolbar .spacer{flex:1}.toolbar .hint{color:var(--muted);font-size:10px}
 .workspace{min-height:0;display:grid;grid-template-columns:202px minmax(0,1fr) 190px}.sidebar,.objects-panel{min-height:0;overflow:auto;background:var(--panel)}.sidebar{border-right:1px solid var(--line)}.objects-panel{border-left:1px solid var(--line)}.section{padding:12px 11px 8px;display:flex;align-items:center;justify-content:space-between;font-size:10px;letter-spacing:1px;font-weight:900;color:#a9bad0}.section em{font-style:normal;color:var(--muted);font-weight:500;letter-spacing:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 9px 12px}.tile{min-height:65px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:grab;user-select:none;touch-action:none}.tile:hover{border-color:var(--cyan);background:#20334a}.tile .emoji{font-size:23px;line-height:1}.tile small{font-size:10px;color:#c7d5e8}.tile.dragging{opacity:.42}.help{margin:0 9px 12px;padding:8px 9px;border:1px dashed #344960;border-radius:7px;color:var(--muted);font-size:10px;line-height:1.55}.center{min-width:0;min-height:0;display:grid;grid-template-rows:31px minmax(0,1fr)}.scene-head{display:flex;align-items:center;padding:0 11px;background:#111a27;border-bottom:1px solid var(--line);font-size:11px}.scene-head strong{color:#e8eef8}.scene-head .right{margin-left:auto;color:var(--muted);font-size:10px}.viewport{position:relative;min-height:0;overflow:hidden;background:#0a1019;touch-action:none}#threeHost,#twoHost{position:absolute;inset:0;width:100%;height:100%}#twoHost{display:none;touch-action:none}.empty-tip{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;text-align:center;line-height:1.7;color:#8697ad;background:#111b29e8;border:1px solid #2a3b51;border-radius:10px;padding:14px 17px;max-width:260px}.empty-tip strong{display:block;color:#e5edf8;font-size:13px}.drop-glow{position:absolute;inset:8px;border:2px dashed var(--cyan);border-radius:10px;background:#39d6cf0a;pointer-events:none;display:none}.drop-ghost{position:fixed;z-index:10000;pointer-events:none;transform:translate(-50%,-50%);font-size:29px;padding:8px 12px;background:#132338ed;border:1px solid var(--cyan);border-radius:12px;box-shadow:0 10px 28px #0009}.objects-list{padding:0 8px 12px}.settings-panel{padding:0 10px 14px}.setting-card{background:#172333;border:1px solid var(--line);border-radius:8px;padding:10px;margin:0 0 8px}.setting-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;color:#c8d7e9;font-size:11px}.setting-head strong{color:var(--cyan);font-variant-numeric:tabular-nums}.setting-card input[type=range]{width:100%;accent-color:var(--cyan);cursor:pointer}.setting-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:3px}.setting-note{color:var(--muted);font-size:10px;line-height:1.5;padding:2px 2px 8px}.object-row{display:flex;gap:8px;align-items:center;padding:8px;border-radius:6px;cursor:pointer;color:#c8d5e6;font-size:11px}.object-row:hover,.object-row.selected{background:#213650;color:#fff}.object-row .ico{width:19px;text-align:center}.object-row .objname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.object-row .has{font-size:9px;color:var(--cyan)}.empty-list{padding:5px 11px;color:var(--muted);font-size:11px;line-height:1.6}
 #playOverlay{position:absolute;inset:0;z-index:8;background:#070b12eF;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;text-align:center}#playOverlay h2{margin:0;font-size:25px}#playOverlay p{margin:0 0 5px;color:var(--muted)}#score{position:absolute;top:12px;left:12px;z-index:6;display:none;padding:8px 12px;background:#101b2bdd;border:1px solid #344b68;border-radius:8px;font-weight:800}#toast{position:absolute;bottom:13px;left:50%;transform:translateX(-50%);z-index:20;opacity:0;pointer-events:none;background:#1b2d43;border:1px solid #3b5c80;border-radius:8px;padding:8px 13px;white-space:nowrap;transition:opacity .18s}.status{border-top:1px solid var(--line);border-bottom:0;color:var(--muted);font-size:10px}.status .right{margin-left:auto}.status .dot{color:#42d6aa}
-.mobile-controls{display:none;position:absolute;z-index:7;bottom:16px;left:14px;right:14px;justify-content:space-between;align-items:flex-end;pointer-events:none}.move-joystick{position:relative;width:126px;height:126px;flex:0 0 126px;pointer-events:auto;touch-action:none;user-select:none}.joystick-base{position:absolute;inset:5px;border:1px solid #8298b5aa;border-radius:50%;background:radial-gradient(circle at 50% 45%,#253b58d9,#0c182bdc);box-shadow:0 5px 18px #0007,inset 0 0 0 7px #ffffff08;backdrop-filter:blur(5px)}.joystick-knob{position:absolute;left:50%;top:50%;width:48px;height:48px;border:1px solid #b9d4e8;border-radius:50%;background:linear-gradient(145deg,#4b789c,#1b3856);box-shadow:0 4px 12px #0009;transform:translate(-50%,-50%);pointer-events:none}.touch-actions{display:flex;gap:7px;align-items:flex-end;pointer-events:auto}.jump-touch{width:62px;height:62px;border-radius:50%;background:#15243bd9;border:1px solid #7188a5aa;backdrop-filter:blur(5px);font-size:12px;font-weight:800;padding:0;touch-action:none}.jump-touch.pressed{background:#267b78;border-color:#67e6dc}
+.mobile-controls{display:none;position:absolute;z-index:7;bottom:16px;left:14px;right:14px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:42px 42px 42px;grid-template-rows:42px 42px;gap:3px;pointer-events:auto}.pad button.pressed,.jump-touch.pressed{background:#267b78;border-color:#67e6dc}.pad button,.jump-touch{background:#15243bd9;border:1px solid #7188a5aa;backdrop-filter:blur(5px);font-size:17px;padding:0;touch-action:none}.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}.jump-touch{align-self:end;width:62px;height:62px;border-radius:50%;font-size:12px;font-weight:800;pointer-events:auto}
 @media(max-width:820px){.workspace{grid-template-columns:155px minmax(0,1fr) 155px}.objects-panel{display:block}.grid{gap:5px}.tile{min-height:59px}}
 @media(max-width:600px){.workspace{grid-template-columns:96px minmax(0,1fr)}.objects-panel{display:none}.grid{grid-template-columns:1fr;padding:0 5px 9px}.tile{min-height:54px}.tile .emoji{font-size:19px}.tile small{font-size:9px}.brand{font-size:11px}.version{display:none}.topbar{padding:0 6px;gap:5px}.actions{gap:3px}.actions button{padding:6px 7px;font-size:11px}.toolbar{padding:0 5px;gap:4px}.toolbar button{padding:6px 7px;font-size:10px}.toolbar .hint{display:none}}
 
@@ -156,7 +156,7 @@
       <div id="score">⭐ Score: <span id="scoreValue">0</span></div>
       <div id="interactionHint" role="status" aria-live="polite"></div>
       <div id="playOverlay"><h2>▶ Play Mode</h2><p>Test your game. Use WASD to move · Space to jump · E to enter/exit houses.</p><button id="stopBtn">Stop Preview</button></div>
-      <div class="mobile-controls" id="mobileControls"><div class="move-joystick" id="moveJoystick" aria-label="Movement joystick"><div class="joystick-base"></div><div class="joystick-knob" id="moveJoystickKnob"></div></div><div class="touch-actions"><button id="enterTouch" class="jump-touch" data-key="interact" style="width:52px;height:52px">E</button><button class="jump-touch" data-key="space">JUMP</button></div></div>
+      <div class="mobile-controls" id="mobileControls"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div style="display:flex;gap:7px;align-items:end"><button id="enterTouch" class="jump-touch" data-key="interact" style="width:52px;height:52px">E</button><button class="jump-touch" data-key="space">JUMP</button></div></div>
       <div id="toast"></div>
     </div>
   </section>
@@ -218,7 +218,7 @@ function optimizeStaticGeometry(root){
 }
 
 const $=id=>document.getElementById(id);
-const state={mode:'3d',objects:[],selected:null,nextId:1,playing:false,importing:false,score:0,keys:{},touchKeys:new Set(),moveAxis:{x:0,y:0},cameraFollow:null,worldPreset:'day',quality:'high',playSnapshot:null};
+const state={mode:'3d',objects:[],selected:null,nextId:1,playing:false,importing:false,score:0,keys:{},touchKeys:new Set(),cameraFollow:null,worldPreset:'day',quality:'high',playSnapshot:null};
 let historyPast=[],historyFuture=[],historyLock=false,dragHistoryStart=null;
 const colors={player:0x4c8dff,cube:0x4c8dff,sphere:0x39d6cf,platform:0x4984d8,ground:0x64748b,tree:0x32a878,house:0xd17b61,coin:0xffcf4a,enemy:0xe45d72,cylinder:0xe5a84b};
 const names={player:'Player',cube:'Cube',sphere:'Sphere',platform:'Platform',ground:'Ground',tree:'Tree',house:'House',coin:'Coin',enemy:'Enemy',cylinder:'Cylinder',adl:'ADL Directional Light'};
@@ -935,7 +935,7 @@ function updateGame(dt){
    // 2D Player Controller is top-down: do not apply platform gravity to its Y movement.
    if(hasBehavior(obj,'physics')&&!hasBehavior(obj,'controller')&&!hasBehavior(obj,'float')&&!hasBehavior(obj,'bounce')){r.vy+=900*dt;obj.y2+=r.vy*dt;if(obj.y2>=floorY){obj.y2=floorY;r.vy=0;r.onGround=true}else r.onGround=false}
   }
-  if(player){const controller=player.behaviors.find(b=>b.type==='controller'&&b.enabled!==false);const speed=(controller?.speed??5.8)*38;let dx=0,dy=0;if(key.a||key.left||touch.has('a'))dx--;if(key.d||key.right||touch.has('d'))dx++;if(key.w||key.up||touch.has('w'))dy--;if(key.s||key.down||touch.has('s'))dy++;dx+=state.moveAxis.x;dy-=state.moveAxis.y;if(dx||dy){const n=Math.max(1,Math.hypot(dx,dy));player.x2+=dx/n*speed*dt;player.y2+=dy/n*speed*dt;const margin=Math.max(18,player.size*.55);player.x2=THREE.MathUtils.clamp(player.x2,margin,viewport.clientWidth-margin);player.y2=THREE.MathUtils.clamp(player.y2,margin,viewport.clientHeight-margin)}
+  if(player){const controller=player.behaviors.find(b=>b.type==='controller'&&b.enabled!==false);const speed=(controller?.speed??5.8)*38;let dx=0,dy=0;if(key.a||key.left||touch.has('a'))dx--;if(key.d||key.right||touch.has('d'))dx++;if(key.w||key.up||touch.has('w'))dy--;if(key.s||key.down||touch.has('s'))dy++;if(dx||dy){const n=Math.hypot(dx,dy);player.x2+=dx/n*speed*dt;player.y2+=dy/n*speed*dt;const margin=Math.max(18,player.size*.55);player.x2=THREE.MathUtils.clamp(player.x2,margin,viewport.clientWidth-margin);player.y2=THREE.MathUtils.clamp(player.y2,margin,viewport.clientHeight-margin)}
    const jumpDown=key.space||touch.has('space'),r=player.runtime;if(jumpDown&&!r.jumpHeld)r.jumpVy=260;r.jumpHeld=jumpDown;if(r.jumpVy||r.jumpLift){r.jumpVy=(r.jumpVy||0)-850*dt;r.jumpLift=Math.max(0,(r.jumpLift||0)+r.jumpVy*dt);if(r.jumpLift===0)r.jumpVy=0}updatePortal2D(player)}
   if(player){for(const obj of [...state.objects]){if(obj===player)continue;const dist=Math.hypot(obj.x2-player.x2,obj.y2-player.y2);if(hasBehavior(obj,'collectible')&&obj.node.visible&&dist<obj.size*.55+18){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}}
   return;
@@ -949,12 +949,12 @@ function updateGame(dt){
   if(isVehicle(player)){updateVehicle(player,dt);updateInteriorInteraction(player)}
   else {
    const speed=controller?.speed??5.8;
-   const inputX=(key.d||key.right||touch.has('d')?1:0)-(key.a||key.left||touch.has('a')?1:0)+state.moveAxis.x;
-   const inputForward=(key.w||key.up||touch.has('w')?1:0)-(key.s||key.down||touch.has('s')?1:0)+state.moveAxis.y;
+   const inputX=(key.d||key.right||touch.has('d')?1:0)-(key.a||key.left||touch.has('a')?1:0);
+   const inputForward=(key.w||key.up||touch.has('w')?1:0)-(key.s||key.down||touch.has('s')?1:0);
    let dx=inputX,dz=-inputForward;
    const activeCamera=cameraBehavior(player);
    if(activeCamera){const fx=-Math.sin(playCameraYaw),fz=-Math.cos(playCameraYaw),rx=Math.cos(playCameraYaw),rz=-Math.sin(playCameraYaw);dx=rx*inputX+fx*inputForward;dz=rz*inputX+fz*inputForward}
-   if(dx||dz){const length=Math.max(1,Math.hypot(dx,dz));dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);if(!activeCamera||activeCamera.type!=='cameraFirst')player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
+   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
    const jumpDown=key.space||touch.has('space');if(jumpDown&&!player.runtime.jumpHeld&&player.runtime.onGround){player.runtime.vy=controller?.jump??7.2;player.runtime.onGround=false;setModelAnimation(player,'jump')}player.runtime.jumpHeld=jumpDown;updateInteriorInteraction(player);
   }
   for(const obj of [...state.objects]){if(obj===player)continue;if(hasBehavior(obj,'collectible')&&obj.node.visible&&obj.node.position.distanceTo(player.node.position)<1.25*(player.node.scale.x||1)){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}
@@ -963,16 +963,10 @@ function updateGame(dt){
  if(followObject?.node){
   const mode=cameraBehavior(followObject),target=followObject.node.position,inside=!!player?.runtime?.inside;
   if(mode){
-   const first=mode.type==='cameraFirst';
-   followObject.node.updateWorldMatrix(true,true);
-   if(followObject.runtime.cameraEyeOffset===undefined){const eyeBounds=new THREE.Box3().setFromObject(followObject.node),eyeHeight=Math.max(.5,eyeBounds.max.y-eyeBounds.min.y);followObject.runtime.cameraEyeOffset=eyeBounds.min.y-target.y+eyeHeight*.9}
-   const focus=new THREE.Vector3(target.x,target.y+followObject.runtime.cameraEyeOffset,target.z);
+   const first=mode.type==='cameraFirst',focus=new THREE.Vector3(target.x,target.y+(first?1.58:1.28),target.z);
    const direction=new THREE.Vector3(-Math.sin(playCameraYaw)*Math.cos(playCameraPitch),Math.sin(playCameraPitch),-Math.cos(playCameraYaw)*Math.cos(playCameraPitch));
-   const eyeForward=new THREE.Vector3(-Math.sin(playCameraYaw),0,-Math.cos(playCameraYaw));
-   const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.70,Math.min(.90,actorHeight*.42)));
-   const desired=first?firstPersonPosition:new THREE.Vector3(target.x+Math.sin(playCameraYaw)*5.2,target.y+2.65-Math.sin(playCameraPitch)*5.2,target.z+Math.cos(playCameraYaw)*5.2);
-   if(first){followObject.node.rotation.y=Math.atan2(-Math.sin(playCameraYaw),-Math.cos(playCameraYaw));camera.position.copy(desired)}else camera.position.lerp(desired,1-Math.exp(-dt*9));
-   camera.lookAt(focus.clone().addScaledVector(direction,12));controls.target.copy(focus);
+   const desired=first?focus.clone():new THREE.Vector3(target.x+Math.sin(playCameraYaw)*5.2,target.y+2.65-Math.sin(playCameraPitch)*5.2,target.z+Math.cos(playCameraYaw)*5.2);
+   camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));controls.target.copy(focus);
   }else{
    const desired=inside?new THREE.Vector3(target.x+2.15,target.y+1.9,target.z+2.55):new THREE.Vector3(target.x+5,target.y+4.3,target.z+7),lookAt=new THREE.Vector3(target.x,target.y+1,target.z);
    camera.position.lerp(desired,1-Math.exp(-dt*4.5));controls.target.lerp(lookAt,1-Math.exp(-dt*6));
@@ -981,8 +975,8 @@ function updateGame(dt){
 }
 function updateVehicle(car,dt){
  const b=car.behaviors.find(x=>x.type==='driving');const r=car.runtime;const key=state.keys,touch=state.touchKeys;
- const forward=key.w||key.up||touch.has('w')||state.moveAxis.y>.12,reverse=key.s||key.down||touch.has('s')||state.moveAxis.y<-.12;
- const left=key.a||key.left||touch.has('a')||state.moveAxis.x<-.12,right=key.d||key.right||touch.has('d')||state.moveAxis.x>.12;
+ const forward=key.w||key.up||touch.has('w'),reverse=key.s||key.down||touch.has('s');
+ const left=key.a||key.left||touch.has('a'),right=key.d||key.right||touch.has('d');
  const max=b.maxSpeed??15,acc=b.acceleration??9,brake=b.brake??15,steer=b.steering??2.1;
  if(forward)r.velocity=Math.min(max,r.velocity+acc*dt);
  else if(reverse)r.velocity=Math.max(-max*.42,r.velocity-acc*dt);
@@ -1132,17 +1126,9 @@ $('resetBtn').onclick=()=>{camera.position.set(9,8,12);controls.target.set(0,0,0
 $('focusBtn').onclick=()=>{const obj=state.objects.find(o=>o.id===state.selected);if(!obj){toast('Select an object first');return}const target=obj.node.position;controls.target.copy(target);camera.position.copy(target).add(new THREE.Vector3(5,4,7));controls.update();toast('Focused on '+obj.name)};
 
 function clearInput(){
- state.keys={};state.touchKeys.clear();state.moveAxis.x=0;state.moveAxis.y=0;
- const knob=$('moveJoystickKnob');if(knob)knob.style.transform='translate(-50%,-50%)';
+ state.keys={};
+ state.touchKeys.clear();
  for(const btn of document.querySelectorAll('[data-key]'))btn.classList.remove('pressed');
-}
-function setupEditorJoystick(){
- const base=$('moveJoystick'),knob=$('moveJoystickKnob');if(!base||!knob)return;
- let pointerId=null;
- const reset=()=>{pointerId=null;state.moveAxis.x=0;state.moveAxis.y=0;knob.style.transform='translate(-50%,-50%)'};
- const move=e=>{if(pointerId!==e.pointerId)return;const r=base.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,maxTravel=(r.width-48)/2;let dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy);if(len>maxTravel){dx=dx/len*maxTravel;dy=dy/len*maxTravel}state.moveAxis.x=THREE.MathUtils.clamp(dx/maxTravel,-1,1);state.moveAxis.y=THREE.MathUtils.clamp(-dy/maxTravel,-1,1);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))'};
- base.addEventListener('pointerdown',e=>{e.preventDefault();pointerId=e.pointerId;try{base.setPointerCapture(pointerId)}catch(_){}move(e)});
- base.addEventListener('pointermove',move);base.addEventListener('pointerup',e=>{if(pointerId===e.pointerId)reset()});base.addEventListener('pointercancel',reset);base.addEventListener('lostpointercapture',reset);
 }
 function updatePlayButton(){
  const button=$('playBtn');
@@ -1324,7 +1310,7 @@ renderer.shadowMap.enabled=QUALITY_CONFIG.shadows;renderer.shadowMap.type=THREE.
 const hemi=new THREE.HemisphereLight(0xddeaff,0x3d4851,PRESET.hemi);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,PRESET.sun);sun.position.set(9,15,7);sun.castShadow=true;sun.castShadow=QUALITY_CONFIG.shadows;sun.shadow.mapSize.set(QUALITY_CONFIG.shadowSize,QUALITY_CONFIG.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:PRESET.ground,roughness:.96}));floor.rotation.x=-Math.PI/2;floor.position.y=-.035;floor.receiveShadow=true;scene.add(floor);
-const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),moveAxis={x:0,y:0},groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);groundRaycaster.firstHitOnly=true;const runtimePhysicsMeshCache=new WeakMap();let player=null,score=0,last=0,ready=false,cameraFollow=null,adaptivePixelRatio=QUALITY_CONFIG.pixel,perfLast=performance.now(),perfFrames=0,cameraYaw=0,cameraPitch=-.08,lookPointerId=null,lookX=0,lookY=0;
+const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);groundRaycaster.firstHitOnly=true;const runtimePhysicsMeshCache=new WeakMap();let player=null,score=0,last=0,ready=false,cameraFollow=null,adaptivePixelRatio=QUALITY_CONFIG.pixel,perfLast=performance.now(),perfFrames=0,cameraYaw=0,cameraPitch=-.08,lookPointerId=null,lookX=0,lookY=0;
 const keyMap={KeyW:'w',ArrowUp:'w',KeyS:'s',ArrowDown:'s',KeyA:'a',ArrowLeft:'a',KeyD:'d',ArrowRight:'d',Space:'jump',KeyE:'interact',w:'w',s:'s',a:'a',d:'d',W:'w',S:'s',A:'a',D:'d',' ':'jump',e:'interact',E:'interact'};
 function has(o,type){return !!o.behaviors?.some(b=>b.type===type&&b.enabled!==false)}
 function cameraMode(o){return o?.behaviors?.find(b=>(b.type==='cameraFirst'||b.type==='cameraThird')&&b.enabled!==false)?.type||null}
@@ -1524,12 +1510,12 @@ function updateInterior(o){const r=o.runtime,all=objects.filter(q=>has(q,'interi
 
 function moveActor(o,dt){
  const r=o.runtime,b=o.behaviors.find(x=>x.type==='controller'&&x.enabled!==false),speed=b?.speed??5.8;
- const inputX=(keys.d||touchKeys.has('d')?1:0)-(keys.a||touchKeys.has('a')?1:0)+moveAxis.x;
- const inputForward=(keys.w||touchKeys.has('w')?1:0)-(keys.s||touchKeys.has('s')?1:0)+moveAxis.y;
+ const inputX=(keys.d||touchKeys.has('d')?1:0)-(keys.a||touchKeys.has('a')?1:0);
+ const inputForward=(keys.w||touchKeys.has('w')?1:0)-(keys.s||touchKeys.has('s')?1:0);
  let dx=inputX,dz=-inputForward;
  if(cameraMode(o)){const fx=-Math.sin(cameraYaw),fz=-Math.cos(cameraYaw),rx=Math.cos(cameraYaw),rz=-Math.sin(cameraYaw);dx=rx*inputX+fx*inputForward;dz=rz*inputX+fz*inputForward}
  if(dx||dz){
-  const n=Math.max(1,Math.hypot(dx,dz));dx=dx/n*speed*dt;dz=dz/n*speed*dt;
+  const n=Math.hypot(dx,dz);dx=dx/n*speed*dt;dz=dz/n*speed*dt;
   if(dx||dz)moveOnGroundSurface(o,dx,dz);
   o.node.rotation.y=Math.atan2(dx,dz);setAnimation(o,'walk');
  }else setAnimation(o,'idle');
@@ -1563,7 +1549,7 @@ function moveActor(o,dt){
 }
 function drive(o,dt){
  const b=o.behaviors.find(x=>x.type==='driving'),r=o.runtime;
- const f=keys.w||touchKeys.has('w')||moveAxis.y>.12,rev=keys.s||touchKeys.has('s')||moveAxis.y<-.12,left=keys.a||touchKeys.has('a')||moveAxis.x<-.12,right=keys.d||touchKeys.has('d')||moveAxis.x>.12;
+ const f=keys.w||touchKeys.has('w'),rev=keys.s||touchKeys.has('s'),left=keys.a||touchKeys.has('a'),right=keys.d||touchKeys.has('d');
  const max=b?.maxSpeed??15,acc=b?.acceleration??9,brake=b?.brake??15,steer=b?.steering??2.1;
  if(f)r.velocity=Math.min(max,r.velocity+acc*dt);
  else if(rev)r.velocity=Math.max(-max*.42,r.velocity-acc*dt);
@@ -1636,15 +1622,10 @@ function animate(t){
   if(cameraTarget?.node){
    const follow=cameraTarget.node.position,mode=cameraMode(cameraTarget);
    if(mode){
-    const first=mode==='cameraFirst';
-    const actorBounds=bounds(cameraTarget),actorHeight=Math.max(.5,actorBounds.max.y-actorBounds.min.y);
-    if(cameraTarget.runtime.cameraEyeOffset===undefined)cameraTarget.runtime.cameraEyeOffset=actorBounds.min.y-follow.y+actorHeight*.9;
-    const focus=new THREE.Vector3(follow.x,follow.y+cameraTarget.runtime.cameraEyeOffset,follow.z);
+    const first=mode==='cameraFirst',focus=new THREE.Vector3(follow.x,follow.y+(first?1.58:1.28),follow.z);
     const direction=new THREE.Vector3(-Math.sin(cameraYaw)*Math.cos(cameraPitch),Math.sin(cameraPitch),-Math.cos(cameraYaw)*Math.cos(cameraPitch));
-    const eyeForward=new THREE.Vector3(-Math.sin(cameraYaw),0,-Math.cos(cameraYaw));
-    const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.70,Math.min(.90,actorHeight*.42)));
-    const desired=first?firstPersonPosition:new THREE.Vector3(follow.x+Math.sin(cameraYaw)*5.2,follow.y+2.65-Math.sin(cameraPitch)*5.2,follow.z+Math.cos(cameraYaw)*5.2);
-    if(first){cameraTarget.node.rotation.y=Math.atan2(-Math.sin(cameraYaw),-Math.cos(cameraYaw));camera.position.copy(desired)}else camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));
+    const desired=first?focus.clone():new THREE.Vector3(follow.x+Math.sin(cameraYaw)*5.2,follow.y+2.65-Math.sin(cameraPitch)*5.2,follow.z+Math.cos(cameraYaw)*5.2);
+    camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));
    }else{
     const look=new THREE.Vector3(follow.x,follow.y+1,follow.z),desired=new THREE.Vector3(follow.x+5,follow.y+4.2,follow.z+7);
     camera.position.lerp(desired,1-Math.exp(-dt*4.2));camera.lookAt(look);
@@ -1663,13 +1644,6 @@ function animate(t){
  }
  renderer.render(scene,camera);
 }
-function setupRuntimeJoystick(){
- const base=document.getElementById('moveJoystick'),knob=document.getElementById('moveJoystickKnob');if(!base||!knob)return;
- let pointerId=null;
- const reset=()=>{pointerId=null;moveAxis.x=0;moveAxis.y=0;knob.style.transform='translate(-50%,-50%)'};
- const move=e=>{if(pointerId!==e.pointerId)return;const r=base.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,maxTravel=(r.width-48)/2;let dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy);if(len>maxTravel){dx=dx/len*maxTravel;dy=dy/len*maxTravel}moveAxis.x=THREE.MathUtils.clamp(dx/maxTravel,-1,1);moveAxis.y=THREE.MathUtils.clamp(-dy/maxTravel,-1,1);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))'};
- base.addEventListener('pointerdown',e=>{e.preventDefault();pointerId=e.pointerId;try{base.setPointerCapture(pointerId)}catch(_){}move(e)});base.addEventListener('pointermove',move);base.addEventListener('pointerup',e=>{if(pointerId===e.pointerId)reset()});base.addEventListener('pointercancel',reset);base.addEventListener('lostpointercapture',reset);
-}
 function resize(){const w=window.innerWidth,h=window.innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();
 const gameCanvas=renderer.domElement;
 gameCanvas.addEventListener('pointerdown',e=>{
@@ -1686,12 +1660,12 @@ gameCanvas.addEventListener('pointermove',e=>{
 });
 const stopCameraLook=e=>{if(lookPointerId===e.pointerId)lookPointerId=null};
 gameCanvas.addEventListener('pointerup',stopCameraLook);gameCanvas.addEventListener('pointercancel',stopCameraLook);
-function actionForKey(e){return keyMap[e.code]||keyMap[e.key]||null}window.addEventListener('keydown',e=>{const a=actionForKey(e);if(!a)return;e.preventDefault();keys[a]=true},true);window.addEventListener('keyup',e=>{const a=actionForKey(e);if(a){e.preventDefault();keys[a]=false;if(a==='interact'&&player)player.runtime.interactHeld=false}},true);window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;touchKeys.clear();moveAxis.x=0;moveAxis.y=0;const knob=document.getElementById('moveJoystickKnob');if(knob)knob.style.transform='translate(-50%,-50%)'});
+function actionForKey(e){return keyMap[e.code]||keyMap[e.key]||null}window.addEventListener('keydown',e=>{const a=actionForKey(e);if(!a)return;e.preventDefault();keys[a]=true},true);window.addEventListener('keyup',e=>{const a=actionForKey(e);if(a){e.preventDefault();keys[a]=false;if(a==='interact'&&player)player.runtime.interactHeld=false}},true);window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;touchKeys.clear()});
 for(const btn of document.querySelectorAll('[data-key]')){const k=btn.dataset.key;const down=e=>{e.preventDefault();touchKeys.add(k);try{btn.setPointerCapture(e.pointerId)}catch(_){}};const up=e=>{e.preventDefault();touchKeys.delete(k);if(k==='interact'&&player)player.runtime.interactHeld=false};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up)}
-(async()=>{try{for(const v of PROJECT.objects)await loadObject(v);player=objects.find(o=>has(o,'controller'))||objects.find(o=>has(o,'driving'))||null;if(player){player.runtime.vy=0;player.runtime.onGround=true;for(const b of player.behaviors||[]){if(b.type==='camera'){} }}document.getElementById('loading').style.display='none';if(!player){hint.style.display='block';hint.textContent='Add Player Controller or Vehicle Driving to any object to control it.'}else if(TARGET==='desktop')document.getElementById('touchControls').style.display='none';else if(TARGET==='mobile')document.getElementById('touchControls').style.display='flex';else document.getElementById('touchControls').style.display='flex';cameraFollow=objects.find(o=>has(o,'cameraFirst')||has(o,'cameraThird')||has(o,'camera'))||player||null;cameraYaw=(player||cameraFollow)?.node.rotation.y||0;cameraPitch=-0.08;for(const o of objects){if(cameraMode(o)){const box=bounds(o),height=Math.max(.5,box.max.y-box.min.y);o.runtime.cameraEyeOffset=box.min.y-o.node.position.y+height*.9}}setupRuntimeJoystick();ready=true;requestAnimationFrame(animate)}catch(err){console.error(err);document.getElementById('loading').textContent='Could not load game assets: '+err.message}})();
+(async()=>{try{for(const v of PROJECT.objects)await loadObject(v);player=objects.find(o=>has(o,'controller'))||objects.find(o=>has(o,'driving'))||null;if(player){player.runtime.vy=0;player.runtime.onGround=true;for(const b of player.behaviors||[]){if(b.type==='camera'){} }}document.getElementById('loading').style.display='none';if(!player){hint.style.display='block';hint.textContent='Add Player Controller or Vehicle Driving to any object to control it.'}else if(TARGET==='desktop')document.getElementById('touchControls').style.display='none';else if(TARGET==='mobile')document.getElementById('touchControls').style.display='flex';else document.getElementById('touchControls').style.display='flex';cameraFollow=objects.find(o=>has(o,'cameraFirst')||has(o,'cameraThird')||has(o,'camera'))||player||null;cameraYaw=(player||cameraFollow)?.node.rotation.y||0;cameraPitch=-0.08;ready=true;requestAnimationFrame(animate)}catch(err){console.error(err);document.getElementById('loading').textContent='Could not load game assets: '+err.message}})();
 `;
  const projectEscaped=safeProject,defsEscaped=safeDefs;
- return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.18/build/index.module.js"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;align-items:flex-end;pointer-events:none}.move-joystick{position:relative;width:126px;height:126px;flex:0 0 126px;pointer-events:auto;touch-action:none;user-select:none}.joystick-base{position:absolute;inset:5px;border:1px solid #ffffff77;border-radius:50%;background:radial-gradient(circle at 50% 45%,#29425fdf,#14243bdc);box-shadow:0 5px 18px #0007,inset 0 0 0 7px #ffffff08;backdrop-filter:blur(5px)}.joystick-knob{position:absolute;left:50%;top:50%;width:48px;height:48px;border:1px solid #c5d9e9;border-radius:50%;background:linear-gradient(145deg,#5b88aa,#1a3856);box-shadow:0 4px 12px #0009;transform:translate(-50%,-50%);pointer-events:none}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border:1px solid #ffffff77;border-radius:50%;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="move-joystick" id="moveJoystick" aria-label="Movement joystick"><div class="joystick-base"></div><div class="joystick-knob" id="moveJoystickKnob"></div></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
+ return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.18/build/index.module.js"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px;pointer-events:auto}.pad button,.action button{border:1px solid #ffffff77;border-radius:12px;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border-radius:50%}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
 }
 function serialize(){return{engine:'Zero Down Engine',version:'1.3.3',mode:state.mode,environment:state.worldPreset,quality:state.quality,nextId:state.nextId,selected:state.selected,objects:state.objects.map(o=>({id:o.id,kind:o.kind,category:o.category||null,modelId:o.modelId||null,customGLBData:null,customGLBName:o.customGLBName||MODEL_ASSETS[o.modelId]?.file?.name||null,name:o.name,x:o.node.position.x,y:o.node.position.y,z:o.node.position.z,x2:o.x2,y2:o.y2,size:o.size,scale:o.node.scale.x,scaleXYZ:{x:o.node.scale.x,y:o.node.scale.y,z:o.node.scale.z},solid:o.solid,locked:!!o.locked,visible:o.node.visible!==false,rotation:{x:o.node.rotation.x,y:o.node.rotation.y,z:o.node.rotation.z},color:o.color,adlIntensity:o.adlIntensity??null,behaviors:o.behaviors.map(b=>({...b,baseX:o.node.position.x,baseY:o.node.position.y,baseZ:o.node.position.z,baseX2:o.x2,baseY2:o.y2,baseScaleX:o.node.scale.x,baseScaleY:o.node.scale.y,baseScaleZ:o.node.scale.z}))}))}}
 async function serializeProjectForSave(){
@@ -1837,7 +1811,7 @@ window.addEventListener('drop',async e=>{
  await importGLBFile(glb,e.clientX,e.clientY);
 });
 
-init3D();setupDragTiles();setupEditorJoystick();editorEvents();setMode('3d');refresh();
+init3D();setupDragTiles();editorEvents();setMode('3d');refresh();
 </script>
 </body>
 </html>
