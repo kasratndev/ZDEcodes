@@ -970,7 +970,7 @@ function updateGame(dt){
    const focus=new THREE.Vector3(target.x,eyeY,target.z);
    const direction=new THREE.Vector3(-Math.sin(playCameraYaw)*Math.cos(playCameraPitch),Math.sin(playCameraPitch),-Math.cos(playCameraYaw)*Math.cos(playCameraPitch));
    const eyeForward=new THREE.Vector3(-Math.sin(playCameraYaw),0,-Math.cos(playCameraYaw));
-   const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.38,Math.min(.58,actorHeight*.25)));
+   const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.70,Math.min(.90,actorHeight*.42)));
    const desired=first?firstPersonPosition:new THREE.Vector3(target.x+Math.sin(playCameraYaw)*5.2,target.y+2.65-Math.sin(playCameraPitch)*5.2,target.z+Math.cos(playCameraYaw)*5.2);
    camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));controls.target.copy(focus);
   }else{
@@ -1634,7 +1634,7 @@ function animate(t){
     const focus=new THREE.Vector3(follow.x,eyeY,follow.z);
     const direction=new THREE.Vector3(-Math.sin(cameraYaw)*Math.cos(cameraPitch),Math.sin(cameraPitch),-Math.cos(cameraYaw)*Math.cos(cameraPitch));
     const eyeForward=new THREE.Vector3(-Math.sin(cameraYaw),0,-Math.cos(cameraYaw));
-    const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.38,Math.min(.58,actorHeight*.25)));
+    const firstPersonPosition=focus.clone().addScaledVector(eyeForward,Math.max(.70,Math.min(.90,actorHeight*.42)));
     const desired=first?firstPersonPosition:new THREE.Vector3(follow.x+Math.sin(cameraYaw)*5.2,follow.y+2.65-Math.sin(cameraPitch)*5.2,follow.z+Math.cos(cameraYaw)*5.2);
     camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));
    }else{
