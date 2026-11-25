@@ -947,7 +947,7 @@ function updateGame(dt){
   else {
    const speed=controller?.speed??5.8;let dx=0,dz=0;
    if(key.w||key.up||touch.has('w'))dz-=1;if(key.s||key.down||touch.has('s'))dz+=1;if(key.a||key.left||touch.has('a'))dx-=1;if(key.d||key.right||touch.has('d'))dx+=1;
-   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
+   if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const localX=dx,localZ=dz,cy=Math.cos(playCameraYaw),sy=Math.sin(playCameraYaw);dx=localX*cy+localZ*sy;dz=-localX*sy+localZ*cy;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
    const jumpDown=key.space||touch.has('space');if(jumpDown&&!player.runtime.jumpHeld&&player.runtime.onGround){player.runtime.vy=controller?.jump??7.2;player.runtime.onGround=false;setModelAnimation(player,'jump')}player.runtime.jumpHeld=jumpDown;updateInteriorInteraction(player);
   }
   for(const obj of [...state.objects]){if(obj===player)continue;if(hasBehavior(obj,'collectible')&&obj.node.visible&&obj.node.position.distanceTo(player.node.position)<1.25*(player.node.scale.x||1)){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}
@@ -1521,7 +1521,9 @@ function moveActor(o,dt){
  let dx=(keys.d||touchKeys.has('d')?1:0)-(keys.a||touchKeys.has('a')?1:0);
  let dz=(keys.s||touchKeys.has('s')?1:0)-(keys.w||touchKeys.has('w')?1:0);
  if(dx||dz){
-  const n=Math.hypot(dx,dz);dx=dx/n*speed*dt;dz=dz/n*speed*dt;
+  const n=Math.hypot(dx,dz);dx/=n;dz/=n;
+  const localX=dx,localZ=dz,cy=Math.cos(cameraYaw),sy=Math.sin(cameraYaw);
+  dx=(localX*cy+localZ*sy)*speed*dt;dz=(-localX*sy+localZ*cy)*speed*dt;
   if(dx||dz)moveOnGroundSurface(o,dx,dz);
   o.node.rotation.y=Math.atan2(dx,dz);setAnimation(o,'walk');
  }else setAnimation(o,'idle');
@@ -1643,7 +1645,7 @@ function resize(){const w=window.innerWidth,h=window.innerHeight;camera.aspect=w
 function rotateRuntimeCamera(dx,dy){cameraYaw-=dx*.0028;cameraPitch=THREE.MathUtils.clamp(cameraPitch-dy*.0024,-1.25,1.25)}
 renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
 renderer.domElement.addEventListener('pointerdown',e=>{
- if(!ready||!player)return;
+ if(!ready||!cameraFollow)return;
  if(e.pointerType==='touch'){
   cameraTouchPointer=e.pointerId;cameraLastX=e.clientX;cameraLastY=e.clientY;
   try{renderer.domElement.setPointerCapture(e.pointerId)}catch(_){}
