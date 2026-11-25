@@ -114,6 +114,8 @@
     <div class="grid" id="behaviorLibrary">
       <div class="tile" data-behavior="controller"><span class="emoji">🎮</span><small>Player Controller</small></div>
       <div class="tile" data-behavior="camera"><span class="emoji">📷</span><small>Follow Camera</small></div>
+      <div class="tile" data-behavior="cameraFirst"><span class="emoji">👁️</span><small>First Person</small></div>
+      <div class="tile" data-behavior="cameraThird"><span class="emoji">🎥</span><small>Third Person</small></div>
       <div class="tile" data-behavior="physics"><span class="emoji">🧲</span><small>Physics</small></div>
       <div class="tile" data-behavior="driving"><span class="emoji">🚗</span><small>Driving</small></div>
       <div class="tile" data-behavior="interior"><span class="emoji">🚪</span><small>Interact / Portal</small></div>
@@ -142,7 +144,7 @@
       <button class="preset" data-preset="night"><span>🌙</span><small>Night</small></button>
       <button class="preset" data-preset="forest"><span>🌲</span><small>Forest</small></button>
     </div>
-    <div class="help">Every behavior can be dropped onto any scene object. Behaviors are preconfigured and work in 2D, 3D, and exported games.</div>
+    <div class="help">Every behavior can be dropped onto a scene object. Add First Person or Third Person to the character that has Player Controller. On PC, click the game view and move the mouse; on mobile, drag across an empty part of the game view. Touch controls do not rotate the camera.</div>
   </aside>
   <section class="center">
     <div class="scene-head"><strong id="sceneLabel">Scene / 3D</strong><span class="right" id="selectionLabel">No object selected</span></div>
@@ -237,10 +239,11 @@ const MODEL_ASSETS={
  car:{name:'Car',path:'./models/3D/objects/CAR.glb',icon:'🚗',category:'vehicle',targetHeight:1.55,solid:true}
 };
 const gltfLoader=new GLTFLoader();
-const behaviorNames={controller:'Player Controller',camera:'Follow Camera',physics:'Physics',driving:'Vehicle Driving',interior:'Interact / Portal',collectible:'Collectible',enemyAI:'Chase Target',rotate:'Rotate',float:'Float',bounce:'Bounce',move:'Move',patrol:'Patrol',orbit:'Orbit',follow:'Follow Target',flee:'Flee Target',wander:'Wander',pulse:'Pulse Scale',face:'Face Target',fade:'Fade',colorCycle:'Color Cycle',spin:'3D Spin',magnet:'Magnet',aat:'Advanced Asset Technology'};
-const behaviorIcons={controller:'🎮',camera:'📷',physics:'🧲',driving:'🚗',interior:'🚪',collectible:'💎',enemyAI:'👾',rotate:'🔄',float:'🎈',bounce:'🌊',move:'↔️',patrol:'🚶',orbit:'🪐',follow:'🧭',flee:'💨',wander:'🌀',pulse:'💗',face:'👁️',fade:'🌫️',colorCycle:'🌈',spin:'🌪️',magnet:'🧲',aat:'🧬'};
+const behaviorNames={controller:'Player Controller',camera:'Follow Camera',cameraFirst:'First Person Camera',cameraThird:'Third Person Camera',physics:'Physics',driving:'Vehicle Driving',interior:'Interact / Portal',collectible:'Collectible',enemyAI:'Chase Target',rotate:'Rotate',float:'Float',bounce:'Bounce',move:'Move',patrol:'Patrol',orbit:'Orbit',follow:'Follow Target',flee:'Flee Target',wander:'Wander',pulse:'Pulse Scale',face:'Face Target',fade:'Fade',colorCycle:'Color Cycle',spin:'3D Spin',magnet:'Magnet',aat:'Advanced Asset Technology'};
+const behaviorIcons={controller:'🎮',camera:'📷',cameraFirst:'👁️',cameraThird:'🎥',physics:'🧲',driving:'🚗',interior:'🚪',collectible:'💎',enemyAI:'👾',rotate:'🔄',float:'🎈',bounce:'🌊',move:'↔️',patrol:'🚶',orbit:'🪐',follow:'🧭',flee:'💨',wander:'🌀',pulse:'💗',face:'👁️',fade:'🌫️',colorCycle:'🌈',spin:'🌪️',magnet:'🧲',aat:'🧬'};
 let scene,camera,renderer,controls,raycaster,groundPlane,hemisphereLight,sunLight,floorMesh,dragObject=null,assetDrag=null,behaviorDrag=null,ghost=null,toastTimer=null,lastFrame=0,suppressTileClick=false;
 let ctx2,animationTime=0,perfFrames=0,perfLast=0;
+let playCameraYaw=0,playCameraPitch=-0.08,playLookPointerId=null,playLookX=0,playLookY=0;
 const aatEditorCache=new WeakMap();
 let aatEditorLastUpdate=0,adaptiveEditorPixel=.78;
 const viewport=$('viewport'),threeHost=$('threeHost'),twoHost=$('twoHost');
@@ -515,6 +518,7 @@ function addBehavior(obj,type){
  if(!obj.behaviors)obj.behaviors=[];
  if(!behaviorNames[type]){toast('Unknown behavior');return}
  if(type==='aat'&&state.mode!=='3d'){toast('AAT is available in 3D scenes');return}
+ if((type==='cameraFirst'||type==='cameraThird')&&state.mode!=='3d'){toast('First Person and Third Person cameras require a 3D scene');return}
  if(obj.behaviors.some(b=>b.type===type)){toast('Already added');return}
  const before=beginHistory();
  // One object can be controlled at a time, but any object type may become that object.
@@ -522,6 +526,7 @@ function addBehavior(obj,type){
   toast('Remove the current Player Controller / Driving behavior first');return;
  }
  const p=obj.node.position,sc=obj.node.scale;
+ if(['camera','cameraFirst','cameraThird'].includes(type))obj.behaviors=obj.behaviors.filter(b=>!['camera','cameraFirst','cameraThird'].includes(b.type));
  const behavior={type,enabled:true,time:0,baseX:p.x,baseY:p.y,baseZ:p.z,baseX2:obj.x2,baseY2:obj.y2,baseScaleX:sc.x,baseScaleY:sc.y,baseScaleZ:sc.z};
  if(type==='aat'){behavior.detailThreshold=.035;behavior.shadowDistance=75;behavior.screenSpaceLOD=true}
  if(type==='controller'){behavior.speed=5.8;behavior.jump=7.2;behavior.gravity=18;behavior.stepHeight=.72;behavior.groundSnap=1.15;behavior.maxSlopeAngle=52;obj.runtime.vy=0;obj.runtime.onGround=true;obj.runtime.jumpHeld=false}
@@ -699,6 +704,8 @@ function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 
 function hasBehavior(o,type){return o.behaviors?.some(b=>b.type===type&&b.enabled!==false)??false}
 function playerObject(){return state.objects.find(o=>hasBehavior(o,'controller'))||state.objects.find(o=>hasBehavior(o,'driving'))||null}
+function cameraBehavior(o){return o?.behaviors?.find(b=>(b.type==='cameraFirst'||b.type==='cameraThird')&&b.enabled!==false)||null}
+function rotatePlayCamera(dx,dy){playCameraYaw-=dx*.0042;playCameraPitch=THREE.MathUtils.clamp(playCameraPitch-dy*.0032,-1.2,1.2)}
 function isVehicle(o){return !!o&&hasBehavior(o,'driving')}
 function controlledObjectBehavior(type){return ['move','patrol','orbit','follow','flee','wander','magnet','enemyAI','float','bounce'].includes(type)}
 function isSolidObject(o){return ['cube','sphere','house','tree','cylinder','platform','ground','enemy'].includes(o.kind)||o.behaviors?.some(b=>b.type==='physics'&&b.enabled!==false)||(o.kind==='model'&&o.solid!==false&&o.category!=='interior'&&o.category!=='collectible'&&o.category!=='vehicle')}
@@ -941,15 +948,30 @@ function updateGame(dt){
   const controller=player.behaviors.find(b=>b.type==='controller');
   if(isVehicle(player)){updateVehicle(player,dt);updateInteriorInteraction(player)}
   else {
-   const speed=controller?.speed??5.8;let dx=0,dz=0;
-   if(key.w||key.up||touch.has('w'))dz-=1;if(key.s||key.down||touch.has('s'))dz+=1;if(key.a||key.left||touch.has('a'))dx-=1;if(key.d||key.right||touch.has('d'))dx+=1;
+   const speed=controller?.speed??5.8;
+   const inputX=(key.d||key.right||touch.has('d')?1:0)-(key.a||key.left||touch.has('a')?1:0);
+   const inputForward=(key.w||key.up||touch.has('w')?1:0)-(key.s||key.down||touch.has('s')?1:0);
+   let dx=inputX,dz=-inputForward;
+   const activeCamera=cameraBehavior(player);
+   if(activeCamera){const fx=-Math.sin(playCameraYaw),fz=-Math.cos(playCameraYaw),rx=Math.cos(playCameraYaw),rz=-Math.sin(playCameraYaw);dx=rx*inputX+fx*inputForward;dz=rz*inputX+fz*inputForward}
    if(dx||dz){const length=Math.hypot(dx,dz);dx/=length;dz/=length;const stepX=dx*speed*dt,stepZ=dz*speed*dt;if(stepX||stepZ)moveOnGroundSurface(player,stepX,stepZ);player.node.rotation.y=Math.atan2(dx,dz);setModelAnimation(player,'walk')}else setModelAnimation(player,'idle');
    const jumpDown=key.space||touch.has('space');if(jumpDown&&!player.runtime.jumpHeld&&player.runtime.onGround){player.runtime.vy=controller?.jump??7.2;player.runtime.onGround=false;setModelAnimation(player,'jump')}player.runtime.jumpHeld=jumpDown;updateInteriorInteraction(player);
   }
   for(const obj of [...state.objects]){if(obj===player)continue;if(hasBehavior(obj,'collectible')&&obj.node.visible&&obj.node.position.distanceTo(player.node.position)<1.25*(player.node.scale.x||1)){obj.node.visible=false;state.score++;$('scoreValue').textContent=state.score;toast('Object collected!')}}
  }
  const followObject=state.cameraFollow?state.objects.find(o=>o.id===state.cameraFollow):null;
- if(followObject?.node){const target=followObject.node.position,inside=!!player?.runtime?.inside,desired=inside?new THREE.Vector3(target.x+2.15,target.y+1.9,target.z+2.55):new THREE.Vector3(target.x+5,target.y+4.3,target.z+7),lookAt=new THREE.Vector3(target.x,target.y+1,target.z);camera.position.lerp(desired,1-Math.exp(-dt*4.5));controls.target.lerp(lookAt,1-Math.exp(-dt*6))}
+ if(followObject?.node){
+  const mode=cameraBehavior(followObject),target=followObject.node.position,inside=!!player?.runtime?.inside;
+  if(mode){
+   const first=mode.type==='cameraFirst',focus=new THREE.Vector3(target.x,target.y+(first?1.58:1.28),target.z);
+   const direction=new THREE.Vector3(-Math.sin(playCameraYaw)*Math.cos(playCameraPitch),Math.sin(playCameraPitch),-Math.cos(playCameraYaw)*Math.cos(playCameraPitch));
+   const desired=first?focus.clone():new THREE.Vector3(target.x+Math.sin(playCameraYaw)*5.2,target.y+2.65-Math.sin(playCameraPitch)*5.2,target.z+Math.cos(playCameraYaw)*5.2);
+   camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));controls.target.copy(focus);
+  }else{
+   const desired=inside?new THREE.Vector3(target.x+2.15,target.y+1.9,target.z+2.55):new THREE.Vector3(target.x+5,target.y+4.3,target.z+7),lookAt=new THREE.Vector3(target.x,target.y+1,target.z);
+   camera.position.lerp(desired,1-Math.exp(-dt*4.5));controls.target.lerp(lookAt,1-Math.exp(-dt*6));
+  }
+ }
 }
 function updateVehicle(car,dt){
  const b=car.behaviors.find(x=>x.type==='driving');const r=car.runtime;const key=state.keys,touch=state.touchKeys;
@@ -1075,6 +1097,24 @@ function setupDragTiles(){
  document.querySelectorAll('[data-kind],[data-model]').forEach(el=>el.addEventListener('click',()=>{if(suppressTileClick||assetDrag||behaviorDrag)return;const r=viewport.getBoundingClientRect();placeLibraryAsset(el,r.left+r.width/2,r.top+r.height/2)}));
 }
 function editorEvents(){
+ const canvas=renderer.domElement;
+ canvas.addEventListener('pointerdown',e=>{
+  if(!state.playing||!cameraBehavior(playerObject()||state.objects.find(o=>cameraBehavior(o))))return;
+  if(e.pointerType==='mouse'){
+   if(e.button!==0)return;
+   try{const lock=canvas.requestPointerLock?.();if(lock?.catch)lock.catch(()=>{})}catch(_){}
+  }else{
+   playLookPointerId=e.pointerId;playLookX=e.clientX;playLookY=e.clientY;
+   try{canvas.setPointerCapture(e.pointerId)}catch(_){}
+  }
+ });
+ canvas.addEventListener('pointermove',e=>{
+  if(!state.playing||!cameraBehavior(playerObject()||state.objects.find(o=>cameraBehavior(o))))return;
+  if(e.pointerType==='mouse'&&document.pointerLockElement===canvas)rotatePlayCamera(e.movementX||0,e.movementY||0);
+  else if(playLookPointerId===e.pointerId){const dx=e.clientX-playLookX,dy=e.clientY-playLookY;playLookX=e.clientX;playLookY=e.clientY;rotatePlayCamera(dx,dy)}
+ });
+ const stopLook=e=>{if(playLookPointerId===e.pointerId)playLookPointerId=null};
+ canvas.addEventListener('pointerup',stopLook);canvas.addEventListener('pointercancel',stopLook);
  renderer.domElement.addEventListener('pointerdown',e=>{if(state.mode!=='3d'||state.playing||assetDrag||behaviorDrag)return;const hit=hitObject(e.clientX,e.clientY);if(hit){select(hit.id);if(hit.locked)return;dragHistoryStart=beginHistory();dragObject=hit;controls.enabled=false;renderer.domElement.setPointerCapture?.(e.pointerId)}else select(null)});
  renderer.domElement.addEventListener('pointermove',e=>{if(!dragObject||state.mode!=='3d')return;const p=pointerGround(e.clientX,e.clientY);dragObject.node.position.x=p.x;dragObject.node.position.z=p.z;refresh()});
  renderer.domElement.addEventListener('pointerup',()=>{if(dragObject){dragObject=null;controls.enabled=!state.playing;commitHistory(dragHistoryStart,'Move object');dragHistoryStart=null}});renderer.domElement.addEventListener('pointercancel',()=>{dragObject=null;controls.enabled=!state.playing;commitHistory(dragHistoryStart,'Move object');dragHistoryStart=null});
@@ -1107,7 +1147,9 @@ function startPlay(){
   state.score=0;
   $('scoreValue').textContent='0';
   $('score').style.display='block';$('interactionHint').style.display='none';
-  state.cameraFollow=playerObject()?.id||state.objects.find(o=>o.behaviors?.some(b=>b.type==='camera'&&b.enabled!==false))?.id||null;
+  const cameraObject=playerObject()||state.objects.find(o=>cameraBehavior(o)||hasBehavior(o,'camera'))||null;
+  state.cameraFollow=cameraObject?.id||null;
+  playCameraYaw=cameraObject?.node.rotation.y||0;playCameraPitch=-0.08;playLookPointerId=null;
   for(const o of state.objects){
    if(!o.node)throw new Error('An object has no 3D node: '+(o.name||o.kind));
    if(!o.runtime)o.runtime={vy:0,onGround:false,time:0,baseY:0,jumpHeld:false};
@@ -1146,7 +1188,8 @@ function stopPlay(){
  }
  const wasPlaying=state.playing;
  state.playing=false;
- state.cameraFollow=null;
+ if(document.pointerLockElement===renderer?.domElement)document.exitPointerLock?.();
+ playLookPointerId=null;state.cameraFollow=null;
  $('score').style.display='none';$('interactionHint').style.display='none';
  $('mobileControls').style.display='none';
  // The Play Mode overlay must never remain above the editor after stopping.
@@ -1267,9 +1310,11 @@ renderer.shadowMap.enabled=QUALITY_CONFIG.shadows;renderer.shadowMap.type=THREE.
 const hemi=new THREE.HemisphereLight(0xddeaff,0x3d4851,PRESET.hemi);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,PRESET.sun);sun.position.set(9,15,7);sun.castShadow=true;sun.castShadow=QUALITY_CONFIG.shadows;sun.shadow.mapSize.set(QUALITY_CONFIG.shadowSize,QUALITY_CONFIG.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:PRESET.ground,roughness:.96}));floor.rotation.x=-Math.PI/2;floor.position.y=-.035;floor.receiveShadow=true;scene.add(floor);
-const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);groundRaycaster.firstHitOnly=true;const runtimePhysicsMeshCache=new WeakMap();let player=null,score=0,last=0,ready=false,cameraFollow=null,adaptivePixelRatio=QUALITY_CONFIG.pixel,perfLast=performance.now(),perfFrames=0;
+const loader=new GLTFLoader(),objects=[],keys={},touchKeys=new Set(),groundRaycaster=new THREE.Raycaster(),groundDown=new THREE.Vector3(0,-1,0);groundRaycaster.firstHitOnly=true;const runtimePhysicsMeshCache=new WeakMap();let player=null,score=0,last=0,ready=false,cameraFollow=null,adaptivePixelRatio=QUALITY_CONFIG.pixel,perfLast=performance.now(),perfFrames=0,cameraYaw=0,cameraPitch=-.08,lookPointerId=null,lookX=0,lookY=0;
 const keyMap={KeyW:'w',ArrowUp:'w',KeyS:'s',ArrowDown:'s',KeyA:'a',ArrowLeft:'a',KeyD:'d',ArrowRight:'d',Space:'jump',KeyE:'interact',w:'w',s:'s',a:'a',d:'d',W:'w',S:'s',A:'a',D:'d',' ':'jump',e:'interact',E:'interact'};
 function has(o,type){return !!o.behaviors?.some(b=>b.type===type&&b.enabled!==false)}
+function cameraMode(o){return o?.behaviors?.find(b=>(b.type==='cameraFirst'||b.type==='cameraThird')&&b.enabled!==false)?.type||null}
+function rotateCamera(dx,dy){cameraYaw-=dx*.0042;cameraPitch=THREE.MathUtils.clamp(cameraPitch-dy*.0032,-1.2,1.2)}
 function mat(color,roughness=.72,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
 function makePrimitive(kind){const g=new THREE.Group();let mesh=null;
  if(kind==='player'){const body=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.85,5,12),mat(0x4c8dff));body.position.y=.82;const head=new THREE.Mesh(new THREE.SphereGeometry(.25,18,14),mat(0xf0c6a3));head.position.y=1.52;g.add(body,head)}
@@ -1465,8 +1510,10 @@ function updateInterior(o){const r=o.runtime,all=objects.filter(q=>has(q,'interi
 
 function moveActor(o,dt){
  const r=o.runtime,b=o.behaviors.find(x=>x.type==='controller'&&x.enabled!==false),speed=b?.speed??5.8;
- let dx=(keys.d||touchKeys.has('d')?1:0)-(keys.a||touchKeys.has('a')?1:0);
- let dz=(keys.s||touchKeys.has('s')?1:0)-(keys.w||touchKeys.has('w')?1:0);
+ const inputX=(keys.d||touchKeys.has('d')?1:0)-(keys.a||touchKeys.has('a')?1:0);
+ const inputForward=(keys.w||touchKeys.has('w')?1:0)-(keys.s||touchKeys.has('s')?1:0);
+ let dx=inputX,dz=-inputForward;
+ if(cameraMode(o)){const fx=-Math.sin(cameraYaw),fz=-Math.cos(cameraYaw),rx=Math.cos(cameraYaw),rz=-Math.sin(cameraYaw);dx=rx*inputX+fx*inputForward;dz=rz*inputX+fz*inputForward}
  if(dx||dz){
   const n=Math.hypot(dx,dz);dx=dx/n*speed*dt;dz=dz/n*speed*dt;
   if(dx||dz)moveOnGroundSurface(o,dx,dz);
@@ -1573,8 +1620,16 @@ function animate(t){
   }
   const cameraTarget=player||cameraFollow;
   if(cameraTarget?.node){
-   const follow=cameraTarget.node.position,look=new THREE.Vector3(follow.x,follow.y+1,follow.z),desired=new THREE.Vector3(follow.x+5,follow.y+4.2,follow.z+7);
-   camera.position.lerp(desired,1-Math.exp(-dt*4.2));camera.lookAt(look);
+   const follow=cameraTarget.node.position,mode=cameraMode(cameraTarget);
+   if(mode){
+    const first=mode==='cameraFirst',focus=new THREE.Vector3(follow.x,follow.y+(first?1.58:1.28),follow.z);
+    const direction=new THREE.Vector3(-Math.sin(cameraYaw)*Math.cos(cameraPitch),Math.sin(cameraPitch),-Math.cos(cameraYaw)*Math.cos(cameraPitch));
+    const desired=first?focus.clone():new THREE.Vector3(follow.x+Math.sin(cameraYaw)*5.2,follow.y+2.65-Math.sin(cameraPitch)*5.2,follow.z+Math.cos(cameraYaw)*5.2);
+    camera.position.lerp(desired,1-Math.exp(-dt*9));camera.lookAt(focus.clone().addScaledVector(direction,12));
+   }else{
+    const look=new THREE.Vector3(follow.x,follow.y+1,follow.z),desired=new THREE.Vector3(follow.x+5,follow.y+4.2,follow.z+7);
+    camera.position.lerp(desired,1-Math.exp(-dt*4.2));camera.lookAt(look);
+   }
   }
  }
  updateAATRuntime();perfFrames++;
@@ -1590,9 +1645,24 @@ function animate(t){
  renderer.render(scene,camera);
 }
 function resize(){const w=window.innerWidth,h=window.innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();
+const gameCanvas=renderer.domElement;
+gameCanvas.addEventListener('pointerdown',e=>{
+ if(!ready||!cameraMode(player||cameraFollow))return;
+ if(e.pointerType==='mouse'){
+  if(e.button!==0)return;
+  try{const lock=gameCanvas.requestPointerLock?.();if(lock?.catch)lock.catch(()=>{})}catch(_){}
+ }else{lookPointerId=e.pointerId;lookX=e.clientX;lookY=e.clientY;try{gameCanvas.setPointerCapture(e.pointerId)}catch(_){}}
+});
+gameCanvas.addEventListener('pointermove',e=>{
+ if(!ready||!cameraMode(player||cameraFollow))return;
+ if(e.pointerType==='mouse'&&document.pointerLockElement===gameCanvas)rotateCamera(e.movementX||0,e.movementY||0);
+ else if(lookPointerId===e.pointerId){const dx=e.clientX-lookX,dy=e.clientY-lookY;lookX=e.clientX;lookY=e.clientY;rotateCamera(dx,dy)}
+});
+const stopCameraLook=e=>{if(lookPointerId===e.pointerId)lookPointerId=null};
+gameCanvas.addEventListener('pointerup',stopCameraLook);gameCanvas.addEventListener('pointercancel',stopCameraLook);
 function actionForKey(e){return keyMap[e.code]||keyMap[e.key]||null}window.addEventListener('keydown',e=>{const a=actionForKey(e);if(!a)return;e.preventDefault();keys[a]=true},true);window.addEventListener('keyup',e=>{const a=actionForKey(e);if(a){e.preventDefault();keys[a]=false;if(a==='interact'&&player)player.runtime.interactHeld=false}},true);window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;touchKeys.clear()});
 for(const btn of document.querySelectorAll('[data-key]')){const k=btn.dataset.key;const down=e=>{e.preventDefault();touchKeys.add(k);try{btn.setPointerCapture(e.pointerId)}catch(_){}};const up=e=>{e.preventDefault();touchKeys.delete(k);if(k==='interact'&&player)player.runtime.interactHeld=false};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up)}
-(async()=>{try{for(const v of PROJECT.objects)await loadObject(v);player=objects.find(o=>has(o,'controller'))||objects.find(o=>has(o,'driving'))||null;if(player){player.runtime.vy=0;player.runtime.onGround=true;for(const b of player.behaviors||[]){if(b.type==='camera'){} }}document.getElementById('loading').style.display='none';if(!player){hint.style.display='block';hint.textContent='Add Player Controller or Vehicle Driving to any object to control it.'}else if(TARGET==='desktop')document.getElementById('touchControls').style.display='none';else if(TARGET==='mobile')document.getElementById('touchControls').style.display='flex';else document.getElementById('touchControls').style.display='flex';cameraFollow=objects.find(o=>has(o,'camera'))||player||null;ready=true;requestAnimationFrame(animate)}catch(err){console.error(err);document.getElementById('loading').textContent='Could not load game assets: '+err.message}})();
+(async()=>{try{for(const v of PROJECT.objects)await loadObject(v);player=objects.find(o=>has(o,'controller'))||objects.find(o=>has(o,'driving'))||null;if(player){player.runtime.vy=0;player.runtime.onGround=true;for(const b of player.behaviors||[]){if(b.type==='camera'){} }}document.getElementById('loading').style.display='none';if(!player){hint.style.display='block';hint.textContent='Add Player Controller or Vehicle Driving to any object to control it.'}else if(TARGET==='desktop')document.getElementById('touchControls').style.display='none';else if(TARGET==='mobile')document.getElementById('touchControls').style.display='flex';else document.getElementById('touchControls').style.display='flex';cameraFollow=objects.find(o=>has(o,'cameraFirst')||has(o,'cameraThird')||has(o,'camera'))||player||null;cameraYaw=(player||cameraFollow)?.node.rotation.y||0;cameraPitch=-0.08;ready=true;requestAnimationFrame(animate)}catch(err){console.error(err);document.getElementById('loading').textContent='Could not load game assets: '+err.message}})();
 `;
  const projectEscaped=safeProject,defsEscaped=safeDefs;
  return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>'+title+'</title><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.18/build/index.module.js"}}<\/script><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09121d;color:#f2f6fb;font:14px Segoe UI,Arial,sans-serif}#gameCanvas{position:absolute;inset:0}#gameCanvas canvas{display:block;width:100%;height:100%}.hud{position:absolute;z-index:3;left:14px;top:14px;padding:9px 13px;border:1px solid #ffffff30;border-radius:10px;background:#0b1624d9;backdrop-filter:blur(9px);font-weight:800}#hint{position:absolute;z-index:4;top:14px;left:50%;transform:translateX(-50%);display:none;padding:9px 14px;border-radius:9px;border:1px solid #7ab5d6;background:#0b1b2beF;font-weight:800;white-space:nowrap}#loading{position:absolute;z-index:9;inset:0;display:grid;place-items:center;background:#09121d;font-size:16px}.mobile{display:none;position:absolute;z-index:5;left:14px;right:14px;bottom:16px;justify-content:space-between;pointer-events:none}.pad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px;pointer-events:auto}.pad button,.action button{border:1px solid #ffffff77;border-radius:12px;background:#14243bdc;color:#fff;font-weight:900;touch-action:none}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.action{display:flex;gap:8px;align-items:end;pointer-events:auto}.action button{width:58px;height:58px;border-radius:50%}@media(pointer:coarse),(max-width:760px){.mobile{display:flex}}@media(max-width:520px){.hud{font-size:12px}.mobile{bottom:12px}}</style></head><body><div id="gameCanvas"></div><div class="hud">'+title+' <span id="score">★ 0</span></div><div id="hint"></div><div id="loading">Loading world...</div><div id="touchControls" class="mobile"><div class="pad"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="action"><button id="touchEnter" data-key="interact">ENTER</button><button data-key="jump">JUMP</button></div></div><script id="projectData" type="application/json">'+projectEscaped+'<\/script><script id="modelData" type="application/json">'+defsEscaped+'<\/script><script type="module">'+runtime+'<\/script></body></html>';
